@@ -25,6 +25,7 @@ SQL_DRIVER_NAME                    EQUATE(  6)
 SQL_DRIVER_VER                     EQUATE(  7)
 SQL_FETCH_DIRECTION                EQUATE(  8)
 SQL_ODBC_API_CONFORMANCE           EQUATE(  9)
+
 SQL_ODBC_VER                       EQUATE( 10)
 SQL_ROW_UPDATES                    EQUATE( 11)
 SQL_ODBC_SAG_CLI_CONFORMANCE       EQUATE( 12)
