@@ -22,6 +22,7 @@ connStr                &IConnString,private ! instance to hold the connection st
 ! and use locally, but no code should be allowed to modify
 gethDbc                procedure(),SQLHDBC
 gethStmt               procedure(),SQLHStmt
+
 gethEnv                procedure(),SQLHEnv
 !
 init                   procedure(),sqlReturn

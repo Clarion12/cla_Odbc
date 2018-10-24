@@ -6,10 +6,11 @@ _ODBCErrorClPresent_   EQUATE(1)
 
   include('odbcTypes.inc'),once
   include('odbcConn.inc'),once
+  include ('svcom.inc'),once
 
     
 eLengthSqlState    equate(6)
-eLengthErrText     equate(1000)
+eLengthErrText     equate(2000)
   
 OdbcErrorGroup group,type
 sqlState         cstring(eLengthSqlState)

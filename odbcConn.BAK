@@ -157,9 +157,9 @@ outs cstr
 
     retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), 2000, outLength, SQL_DRIVER_NOPROMPT)
     ! take the output string and convent it to a cla cstring 
-    if (outs.Init(outWideStr) = true)
+    outs.Init(outWideStr)
+
     !stop(outs.getCStr())
-    end
   end   
 
   ! check for with info, always returns with info about the connection

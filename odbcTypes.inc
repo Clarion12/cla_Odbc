@@ -3,6 +3,8 @@
 withStatement    equate(true)
 withoutStatement equate(false)
 
+odbcWideStr       equate(long)
+
 dbVendor itemize,pre()
 MS         equate
 PostGre    equate
