@@ -28,7 +28,7 @@ init                   procedure(),sqlReturn
 init                   procedure(*IConnString connString),sqlReturn,proc
 kill                   procedure()
 ! public methods 
-setOdbcVersion         procedure(),sqlReturn,proc 
+setOdbcVersion         procedure(long verId),sqlReturn,proc 
 connect                procedure(bool statement = withStatement),sqlReturn,proc
 Disconnect             procedure(bool statement = withStatement),sqlReturn,proc
 ! 

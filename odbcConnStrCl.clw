@@ -63,14 +63,11 @@ baseConnStrClType.init procedure(long db, string driverName, string srvName, str
 
   code 
   
-  stop(10)
   ! this param must be present and in range
   if (db <= 0) or (db >= dbVendor:lastVendor)
     return null
   end 
-  
-  stop(11)
-      
+     
   if (~self.init(db) &= null)
     self.IConnStr.setDriverName(driverName)
     self.IConnStr.setSrvName(srvName)
@@ -109,7 +106,7 @@ MSConnStrClType.ISqlConnStr.kill procedure()
   return 
 ! end kill
 ! ------------------------------------------------------------------------------
-    
+
 MSConnStrClType.ISqlConnStr.ConnectionString procedure() !,*cstring
 
   code 

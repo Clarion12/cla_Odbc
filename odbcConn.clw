@@ -102,15 +102,14 @@ ODBCConnectionClType.gethStmt procedure() !,SQLHStmt
   return self.hStmt.gethandle()
 ! ---------------------------------------------------------------------------
 
-ODBCConnectionClType.setOdbcVersion procedure() 
+ODBCConnectionClType.setOdbcVersion procedure(long verId) 
 
 err             ODBCErrorClType
 retv            sqlReturn
-SQL_OV_ODBC3_80 long(380)
 
   code
 
-  retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, SQL_OV_ODBC3_80, SQL_IS_INTEGER);
+  retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
   if (retv <> Sql_Success) 
     err.getError(SQL_HANDLE_ENV, self.gethEnv())
   end
@@ -118,17 +117,27 @@ SQL_OV_ODBC3_80 long(380)
   return retv
 ! --------------------------------------------------------------------------
 
+! --------------------------------------------------------------------------
+! connect to the database 
+! the output connection is not used but is converted as demo of using wide strings 
+! out form API calls.
+! 
+! if the statement parameter is true, the default, a statement handle is allocated 
+! --------------------------------------------------------------------------
 ODBCConnectionClType.connect procedure(bool statement = withStatement)
 
 retv       sqlReturn,auto
-outConnStr cstring(2000)
 outLength  sqlsmallint
-holder     cstring(2000)
+
+outConnStr cstring(2001)
+
 wideStr    Cwidestr
-outWdireStr Cwidestr
+outWideStr Cwidestr
+
+outs cstr
 
   code 
-
+  
   if (self.hdbc.getHandle() <= 0)
     retv = self.hDbc.allocateHandle(SQL_HANDLE_DBC, self.hEnv.getHandle())
   else
@@ -136,17 +145,29 @@ outWdireStr Cwidestr
   end
 
   if (retv = sql_Success) or (retv = sql_success_with_info)
-    holder = self.connStr.ConnectionString()
-    wideStr.init(holder)
+    ! make the connection string a wide string for the ODBC 
+    if (wideStr.init(self.connStr.ConnectionString()) = false) 
+      return  = sql_Error
+    end
+    ! make the output connection string a wide string 
     outConnStr = all(' ')
-    outWdireStr.Init(outConnStr)
-    retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWdireStr.GetWideStr(), size(outConnStr) - 1, outLength, SQL_DRIVER_NOPROMPT)
+    if (outWideStr.Init(outConnStr) = false) 
+      return sql_Error
+    end
+
+    retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), 2000, outLength, SQL_DRIVER_NOPROMPT)
+    ! take the output string and convent it to a cla cstring 
+    outs.Init(outWideStr)
+
+    !stop(outs.getCStr())
   end   
 
   ! check for with info, always returns with info about the connection
+  ! because the connection string is modified 
   if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
     !self.getDatabaseError()
   else 
+    ! allocate the statement handle if needed
     if (statement = true) 
       retv = self.hStmt.AllocateHandle(SQL_HANDLE_STMT, self.hDbc.getHandle())
       if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
@@ -164,9 +185,14 @@ outWdireStr Cwidestr
 ! end connect 
 ! ----------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! disconnect from the database, freeing all handle in use
+! if the dbc handle is not valid then nothing is done
+! ----------------------------------------------------------------------
 ODBCConnectionClType.Disconnect procedure(bool statement = withStatement)
 
-retv      sqlReturn
+! assume success at the start
+retv      sqlReturn(sql_Success)
 h         SQLHDBC,auto
 
   code 
