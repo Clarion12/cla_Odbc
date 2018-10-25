@@ -109,7 +109,8 @@ retv            sqlReturn
 
   code
 
-  retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
+  !retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
+  
   if (retv <> Sql_Success) 
     err.getError(SQL_HANDLE_ENV, self.gethEnv())
   end
@@ -129,7 +130,7 @@ ODBCConnectionClType.connect procedure(bool statement = withStatement)
 retv       sqlReturn,auto
 outLength  sqlsmallint
 
-outConnStr cstring(2001)
+outConnStr cstring(501)
 
 wideStr    Cwidestr
 outWideStr Cwidestr
@@ -155,17 +156,20 @@ outs cstr
       return sql_Error
     end
 
-    retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), 2000, outLength, SQL_DRIVER_NOPROMPT)
+    retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), size(outConnStr), outLength, SQL_DRIVER_NOPROMPT)
+    if (retv <> Sql_Success) or (retv <> Sql_Success_With_Info)
+       self.getDatabaseError()
+    end  
     ! take the output string and convent it to a cla cstring 
-    outs.Init(outWideStr)
-
+    if (outs.Init(outWideStr) = true)
     !stop(outs.getCStr())
+    end
   end   
 
   ! check for with info, always returns with info about the connection
   ! because the connection string is modified 
   if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
-    !self.getDatabaseError()
+    self.getDatabaseError()
   else 
     ! allocate the statement handle if needed
     if (statement = true) 
@@ -222,6 +226,7 @@ err    ODBCErrorClType
 
   code 
   
+  if (err.Init() = sql_success)
   err.getDatabaseError(self)
   
   return 

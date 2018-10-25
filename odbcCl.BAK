@@ -229,7 +229,6 @@ err    ODBCErrorClType
 
   code 
   
-  err.Init()
   err.getError(SQL_HANDLE_STMT, self.conn.getHstmt())
   
   return
@@ -397,8 +396,9 @@ retCount long
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), self.sqlStr.strlen())
   
   if (retv <> Sql_Success) and (retv <> Sql_Success_with_info)
-    self.getError()  
-  end
+    !self.getError()  
+    self.getError(SQL_HANDLE_STMT, self.conn.getHstmt())
+  end 
   
   if (retv = Sql_Success_with_info)
     retv = sql_Success  

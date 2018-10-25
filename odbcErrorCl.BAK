@@ -15,7 +15,7 @@
 OdbcErrorClType.init procedure() !,sqlReturn
 
   code 
-  stop(99)
+  
   if (self.makeObjects() <> sql_Success)
     return sql_error
   end 
@@ -106,21 +106,24 @@ outState  CStr
 outErr    CStr
 
 tempholder bool
-
+st string(12)
+amsg string(2001)
+textlenptr sqlsmallint 
   code 
   
   self.freeErrorMsgQ()
   self.getDiagRecCount(handleType, handle)
-
   loop count = 1 to self.errorCount
     
-    claStateMsg = all(' ')
+    claStateMsg = '          '
     tempholder = statemsg.Init(claStateMsg)
 
     claErrMsg = all(' ')
     tempholder = errMsg.Init(claErrMsg)
 
+    !retv = SQLGetDiagRec(handleType, handle, count, address(st), self.errorMsgQ.NativeErrorPtr, address(amsg), 2000, self.errorMsgQ.textLengthPtr)
     retv = SQLGetDiagRec(handleType, handle, count, stateMsg.getWideStr(), self.errorMsgQ.NativeErrorPtr, errMsg.getWideStr(), 2000, self.errorMsgQ.textLengthPtr)
+    !size(self.errorMsgQ.MessageText)
     if (retv = sql_Success) or (retv = sql_success_with_info)
       tempholder = outState.Init(stateMsg)
       self.errorMsgQ.sqlState = outState.getCStr()
@@ -129,8 +132,6 @@ tempholder bool
       add(self.errorMsgQ)
     end  ! if
   end ! loop
-
-  self.displayError = true
   
   if (retv = sql_Success) and (self.displayError = true)
     self.showError()  

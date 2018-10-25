@@ -189,7 +189,7 @@ recCount long
   
 sqlStrClType.formatSpCall procedure(string spName) 
   
-count   long
+count    long
 recCount long
 
   code 

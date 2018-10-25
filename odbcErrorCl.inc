@@ -16,7 +16,7 @@ OdbcErrorGroup group,type
 sqlState         cstring(eLengthSqlState)
 NativeErrorPtr   long
 MessageText      cstring(eLengthErrText)
-textLengthPtr    long
+textLengthPtr    SQLSMALLINT
                end 
 
 OdbcErrorQueue queue(OdbcErrorGroup)
