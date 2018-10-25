@@ -109,9 +109,6 @@ recCount long,auto
   ! once for each parameter
   loop count = 1 to recCount
     get(self.paramQ, count)
-    stop(self.paramq.paraSize)
-    stop(self.paramq.paramPtr)
-    stop('length ' & self.paramQ.paramLength)
     retv = SQLBindParameter(hStmt, self.paramQ.ParamId, self.paramQ.InOutType, self.paramQ.valueType, self.paramQ.ParamType, self.paramQ.paraSize, self.paramQ.DecimalDigits, self.paramQ.ParamPtr, self.paramQ.paramLength, colInd)
     ! if not a good call then get out, if one is missing the rest do not matter
     if (retv <> sql_Success) and (retv <> Sql_Success_with_info)

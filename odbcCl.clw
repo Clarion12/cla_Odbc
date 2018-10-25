@@ -373,7 +373,6 @@ retv   sqlReturn,auto
 
   code
  
- !stop( self.sqlStr.cstr())
   retv = SQLPrepare(self.conn.gethStmt(), sqlCode.cstr(), SQL_NTS)
 
   return retv
@@ -390,7 +389,6 @@ retCount long
 
   code
  
-  stop( self.sqlStr.cstr())
 !  retv = SQLPrepare(self.conn.gethStmt(), self.sqlStr.cstr(), SQL_NTS)
   !stop(retv)
   retCount = wideStr.Init(self.sqlStr.cstr())
