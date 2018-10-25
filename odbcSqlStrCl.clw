@@ -172,6 +172,31 @@ retv   sqlreturn(sql_Success)
   
   return retv
   
+sqlStrClType.formatScalarCall procedure(string spName)
+count   long
+recCount long
+
+  code 
+  
+  self.sqlStr.Kill()
+  self.sqlStr.cat(eScalarCallLabel & spName & eOpenParen & ')}')
+
+  return
+
+sqlStrClType.formatScalarCall procedure(string spName, *ParametersClass params)
+count   long
+recCount long
+
+  code 
+  
+  self.sqlStr.Kill()
+  self.sqlStr.cat(eScalarCallLabel & spName & eOpenParen)
+  if (params.FillPlaceHolders(self, 2) = 0) 
+    self.sqlStr.cat(')}')
+  end       
+
+  return
+
 sqlStrClType.formatSpCall procedure(string spName, *ParametersClass params) 
   
 count   long

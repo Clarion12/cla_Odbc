@@ -26,6 +26,7 @@ formatRow        procedure(),virtual
 setSqlCommand    procedure(*IdynStr s),sqlReturn,protected
 setSqlCommand    procedure(string s),sqlReturn,protected
 !
+nextResultSet    procedure(),bool
 fetch            procedure(*queue q),sqlReturn,private
 fetchPage        procedure(long sqlDir),sqlReturn,proc
 closePaging      procedure(),sqlReturn,proc
@@ -46,6 +47,8 @@ setupQuery      procedure(*IDynStr sqlCode, *columnsClass cols),sqlReturn,privat
 execSp         procedure(string spName, *ParametersClass params),sqlReturn
 execSp         procedure(string spName, *columnsClass cols, *queue q),sqlReturn
 execSp         procedure(string spName, *columnsClass cols, *ParametersClass params, *queue q),sqlReturn
+! call a sclar function
+callScalar     procedure(string spName, *ParametersClass params),sqlReturn 
 ! private
 execSp         procedure(),private,sqlReturn
 setupSpCall   procedure(string spName),sqlReturn,private

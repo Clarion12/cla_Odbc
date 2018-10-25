@@ -324,7 +324,29 @@ retv   sqlReturn,auto
 ! end AddInParameter
 ! --------------------------------------------------------------------------------  
 
-ParametersClass.FillPlaceHolders procedure(sqlStrClType sqlCode) 
+ParametersClass.AddOutParameter procedure(*long varPtr) !,sqlReturn,proc
+
+retv   sqlReturn,auto
+
+  code
+ 
+  retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_SLONG, SQL_INTEGER, eSizeLong, 0, address(varPtr), eSizeLong)
+
+  return retv
+! ------------------------------------------------------------------------------
+
+ParametersClass.AddOutParameter procedure(*cstring varPtr) !,sqlReturn,proc
+
+retv   sqlReturn,auto
+
+  code
+ 
+  retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_CHAR, SQL_CHAR, size(varPtr), 0, address(varPtr), size(varPtr))
+
+  return retv
+! ------------------------------------------------------------------------------
+
+ParametersClass.FillPlaceHolders procedure(sqlStrClType sqlCode, long startPos = 1) 
 
 count    long
 recCount long
@@ -332,7 +354,7 @@ recCount long
   code 
   
   recCount = records(self.paramQ)
-  loop count = 1 to recCount 
+  loop count = startpos to recCount 
     get(self.paramQ, count)
     if (count < recCount)
       sqlCode.cat(eMarkerComma)

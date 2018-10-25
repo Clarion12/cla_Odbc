@@ -14,6 +14,7 @@
       SQLFetchScroll(SQLHSTMT StatementHandle, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset),sqlReturn,pascal
       SQLPrepare(SQLHSTMT StatementHandle, *SQLCHAR StatementText, SQLINTEGER TextLength),sqlReturn,pascal,raw,name('SQLPrepareW')
       SQLCloseCursor(SQLHSTMT StatementHandle),sqlReturn,pascal
+      SQLMoreResults(SQLHSTMT StatementHandle),sqlReturn,pascal
     end 
   end
 
@@ -117,6 +118,25 @@ odbcClType.setSqlCommand procedure(string s) ! sqlReturn,protected
   return sql_Success
 ! end setSqlCommand
 ! ----------------------------------------------------------------------  
+
+! ----------------------------------------------------------------------  
+! checks for the next result set, if any, and moves to the next result set
+! returns true if there is more and false if not
+! ----------------------------------------------------------------------  
+odbcClType.nextResultSet procedure() 
+
+retv bool(false)
+res  sqlReturn
+
+  code 
+ 
+  res = SQLMoreResults(self.conn.getHStmt()) 
+  if (res = sql_success) 
+    retv = true
+  end 
+   
+  return retv;
+! ------------------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------
 ! fetch
@@ -225,11 +245,12 @@ retv   sqlReturn
 
 odbcClType.getError procedure() 
 
+retv   sqlReturn
 err    ODBCErrorClType
 
   code 
   
-  err.Init()
+  retv = err.Init()
   err.getError(SQL_HANDLE_STMT, self.conn.getHstmt())
   
   return
@@ -291,12 +312,13 @@ retv    sqlReturn,auto
 
 odbcClType.execQuery procedure(*IDynStr sqlCode) !,sqlReturn,virtual
 
+res     long,auto
 retv    sqlReturn,auto
 wideStr CWideStr
 
   code 
   
-  wideStr.Init(sqlCode.Cstr())
+  res = wideStr.Init(sqlCode.Cstr())
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
    !sqlCode.Cstr()
 
@@ -325,12 +347,13 @@ retv    sqlReturn,auto
 
 odbcClType.execQuery procedure() !,sqlReturn,private
 
+res     long,auto
 retv    sqlReturn,auto
 wideStr CWideStr
 
   code 
   
-  wideStr.Init(self.sqlStr.cstr())
+  res = wideStr.Init(self.sqlStr.cstr())
   !retv = SQLExecDirect(self.conn.gethStmt(), self.sqlStr.Cstr(), SQL_NTS)
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.getWideStr(), SQL_NTS)
   
@@ -485,6 +508,24 @@ retv    sqlReturn
 ! end execSp
 ! ----------------------------------------------------------------------
   
+odbcClType.callScalar procedure(string spName, *ParametersClass params) 
+
+retv    sqlReturn
+
+  code 
+  
+  self.sqlStr.formatScalarCall(spName, params)
+    
+  retv = params.bindParameters(self.conn.gethStmt())
+    
+  if (retv = sql_Success) 
+    retv = self.execSp() 
+  end  
+
+  return retv
+! end execSp
+! ----------------------------------------------------------------------
+
 odbcClType.setupSpCall procedure(string spName) 
 
 retv     sqlReturn,auto

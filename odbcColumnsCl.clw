@@ -182,7 +182,7 @@ retv   sqlReturn(sql_Success)
 
   code 
   
-  self.addColumn(SQL_C_DOUBLE, address(colPtr), 8)
+  self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr))
      
   return retv
 ! end AddColumn
@@ -194,7 +194,7 @@ retv   sqlReturn(sql_Success)
 
   code 
   
-  self.addColumn(SQL_C_DOUBLE, address(colPtr), 8)
+  self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr))
   self.addField(colLabel) 
      
   return retv

@@ -132,5 +132,6 @@ eSelectLabel      equate('select ')
 eFieldListLabel   equate('@FieldList')
 
 eCallLabel        equate('{{call ')
+eScalarCallLabel  equate('{{? = call ')
 eMarkerComma      equate('?, ')
 eFinalMarker      equate('?)}')

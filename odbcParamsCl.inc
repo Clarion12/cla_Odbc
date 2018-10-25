@@ -32,8 +32,12 @@ init                  procedure(),byte,proc
 kill                  procedure()
 destruct              procedure()
 clearQ                procedure()
+!
 bindParameters        procedure(SQLHSTMT hStmt),sqlReturn
 bindParameters        procedure(SQLHSTMT hStmt, *sqlStrClType sqlStr),sqlReturn
+! ----------------------------------------------------------
+! add the various input parameters
+! ----------------------------------------------------------
 AddInParameter        procedure(*long colPtr),sqlReturn,proc
 AddInParameter        procedure(string pName, *long varPtr),sqlReturn,proc
 AddInParameter        procedure(*cstring colPtr),sqlReturn,proc     
@@ -44,8 +48,13 @@ AddInParameter        procedure(*TIMESTAMP_STRUCT colPtr),sqlReturn,proc
 AddInParameter        procedure(string pname, *TIMESTAMP_STRUCT colPtr),sqlReturn,proc
 addParameter          procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc,private
 addParameter          procedure(string paramName, SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc,private
-!
-FillPlaceHolders      procedure(sqlStrClType sqlCode),long
+! ----------------------------------------------------------------
+! add the output types
+! ----------------------------------------------------------------
+AddOutParameter       procedure(*long varPtr),sqlReturn,proc
+AddOutParameter       procedure(*cstring varPtr),sqlReturn,proc
+! 
+FillPlaceHolders      procedure(sqlStrClType sqlCode, long startPos = 1),long
 findByParamName       procedure(string pName),sqlReturn
                     end
 

@@ -35,6 +35,8 @@ replaceName    procedure(*ParametersClass params, *cstring workStr),long
 replaceFieldList procedure(*columnsClass cols)
 formatSpCall   procedure(string spName) 
 formatSpCall   procedure(string spName, *ParametersClass params)
+formatScalarCall procedure(string spName) 
+formatScalarCall procedure(string spName, *ParametersClass params)
 findEnd        procedure(*cstring workStr),sqlReturn,private
              end
              
