@@ -36,8 +36,8 @@ bindParameters        procedure(SQLHSTMT hStmt),sqlReturn
 bindParameters        procedure(SQLHSTMT hStmt, *sqlStrClType sqlStr),sqlReturn
 AddInParameter        procedure(*long colPtr),sqlReturn,proc
 AddInParameter        procedure(string pName, *long varPtr),sqlReturn,proc
-AddInParameter        procedure(*string colPtr),sqlReturn,proc     
-AddInParameter        procedure(string pName, *string colPtr),sqlReturn,proc     
+AddInParameter        procedure(*cstring colPtr),sqlReturn,proc     
+AddInParameter        procedure(string pName, *cstring colPtr),sqlReturn,proc     
 AddInParameter        procedure(*real colPtr),sqlReturn,proc
 AddInParameter        procedure(string pname, *real colPtr),sqlReturn,proc
 AddInParameter        procedure(*TIMESTAMP_STRUCT colPtr),sqlReturn,proc

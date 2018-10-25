@@ -279,13 +279,28 @@ retv   sqlReturn
 ! end AddInParameter
 ! --------------------------------------------------------------------------------
 
-ParametersClass.AddInParameter procedure(*cstring varPtr) !,sqlReturn,proc
+ParametersClass.AddInParameter procedure(*string varPtr) !,sqlReturn,proc
 
 retv   sqlReturn
 
   code
 
   self.addParameter(SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, size(varPtr), 0, address(varPtr), size(varPtr))
+  
+  return retv  
+! end AddInParameter
+! --------------------------------------------------------------------------------
+
+ParametersClass.AddInParameter procedure(string pName, *string varPtr) !,sqlReturn,proc
+
+retv   sqlReturn
+l      long
+
+  code
+
+  l = len(clip(varPtr))
+  varPtr = clip(varPtr) & '\0'
+  self.AddInParameter(pName, varPtr)
   
   return retv  
 ! end AddInParameter
