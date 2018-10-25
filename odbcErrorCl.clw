@@ -15,7 +15,7 @@
 OdbcErrorClType.init procedure() !,sqlReturn
 
   code 
-  stop(99)
+
   if (self.makeObjects() <> sql_Success)
     return sql_error
   end 

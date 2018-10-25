@@ -270,7 +270,7 @@ odbcClType.execQuery procedure(*sqlStrClType sqlCode, *columnsClass cols, *queue
 retv    sqlReturn,auto
 
   code 
-  stop(1)
+  
   if (self.setupQuery(sqlCode.sqlStr, cols) <> sql_Success)
     return sql_error
   end 
@@ -329,7 +329,7 @@ retv    sqlReturn,auto
 wideStr CWideStr
 
   code 
-  stop(self.sqlStr.str())
+  
   wideStr.Init(self.sqlStr.cstr())
   !retv = SQLExecDirect(self.conn.gethStmt(), self.sqlStr.Cstr(), SQL_NTS)
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.getWideStr(), SQL_NTS)
