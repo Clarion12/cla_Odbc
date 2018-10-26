@@ -44,7 +44,7 @@ retv    sqlReturn,auto
 ! end init
 ! -------------------------------------------------------------------------
 
-ODBCConnectionClType.init procedure(*IConnString connString) !,sqlReturn
+ODBCConnectionClType.init procedure(baseConnStrClType connString) !,sqlReturn
 
 retv    sqlReturn,auto
 

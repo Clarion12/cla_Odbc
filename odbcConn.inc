@@ -17,7 +17,7 @@ hDbc                   &OdbcHandleClType,private ! db connection handle
 hEnv                   &OdbcHandleClType,private ! db enviorment handle
 hStmt                  &OdbcStmtHandleClType,private! db statement handle
 !
-connStr                &IConnString,private ! instance to hold the connection string
+connStr                &baseConnStrClType,private ! instance to hold the connection string
 ! some getters, no setters.  Sometimes code will need to query these values
 ! and use locally, but no code should be allowed to modify
 gethDbc                procedure(),SQLHDBC
@@ -26,7 +26,7 @@ gethStmt               procedure(),SQLHStmt
 gethEnv                procedure(),SQLHEnv
 !
 init                   procedure(),sqlReturn
-init                   procedure(*IConnString connString),sqlReturn,proc
+init                   procedure(baseConnStrClType  connString),sqlReturn,proc
 kill                   procedure()
 ! public methods 
 setOdbcVersion         procedure(long verId),sqlReturn,proc 
