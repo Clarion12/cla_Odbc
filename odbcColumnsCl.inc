@@ -15,6 +15,7 @@ ColName        string(eColNameLength)  ! name of the col, not used by the odbc b
 ColType        SQLSMALLINT    ! type of the col, odbc const
 ColValue       SQLPOINTER     ! pointer to the buffer for the result
 ColSize        SQLLEN         ! size of the column in bytes
+resultSetId    long
              end 
 
 columnsClass class,type,module('odbcColumnsCl.clw'),link('odbcColumnsCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)

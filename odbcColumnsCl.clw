@@ -95,6 +95,7 @@ columnsClass.bindColumns procedure(long hStmt) ! sqlReturn
 retv      sqlReturn
 colInd    &long
 x         long,auto
+startRow  long,auto
 
   code 
   
@@ -236,6 +237,7 @@ retv   sqlReturn(sql_Success)
   self.colq.ColType = targetType
   self.colQ.ColValue = TargetValuePtr
   self.colQ.ColSize = BufferLength
+
   add(self.Colq)
    
   return retv

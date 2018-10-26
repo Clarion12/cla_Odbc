@@ -20,6 +20,7 @@ conn             &ODBCConnectionClType,private
 init             procedure(*ODBCConnectionClType conn),byte,proc
 kill             procedure(),virtual
 destruct         procedure()
+unBindColums     procedure()  
 ! public wirtuals 
 formatRow        procedure(),virtual
 ! public protected
@@ -27,10 +28,10 @@ setSqlCommand    procedure(*IdynStr s),sqlReturn,protected
 setSqlCommand    procedure(string s),sqlReturn,protected
 !
 nextResultSet    procedure(),bool
-fetch            procedure(*queue q),sqlReturn,private
-fetchPage        procedure(long sqlDir),sqlReturn,proc
+fetch            procedure(*queue q),sqlReturn,protected,virtual
+fetchPage        procedure(long sqlDir),sqlReturn,protected
 closePaging      procedure(),sqlReturn,proc
-fillResult       procedure(*columnsClass cols, *queue q),sqlReturn,private
+fillResult       procedure(*columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 getError         procedure(),private
 ! public methods that are used to run a query 
 prepQuery       procedure(*IDynStr sqlCode),sqlReturn,virtual
@@ -44,13 +45,13 @@ execQuery       procedure(*ParametersClass params),sqlReturn,private
 setupQuery      procedure(*IDynStr sqlCode, *columnsClass cols),sqlReturn,private
 !
 ! code to call stored procedures 
-execSp         procedure(string spName, *ParametersClass params),sqlReturn
-execSp         procedure(string spName, *columnsClass cols, *queue q),sqlReturn
-execSp         procedure(string spName, *columnsClass cols, *ParametersClass params, *queue q),sqlReturn
+execSp         procedure(string spName, *ParametersClass params),sqlReturn,virtual
+execSp         procedure(string spName, *columnsClass cols, *queue q),sqlReturn,virtual
+execSp         procedure(string spName, *columnsClass cols, *ParametersClass params, *queue q),sqlReturn,virtual
 ! call a sclar function
 callScalar     procedure(string spName, *ParametersClass params),sqlReturn 
 ! private
-execSp         procedure(),private,sqlReturn
+execSp         procedure(),protected,sqlReturn
 setupSpCall   procedure(string spName),sqlReturn,private
 setupSpCall   procedure(string spName, *ParametersClass params),sqlReturn,private
             end

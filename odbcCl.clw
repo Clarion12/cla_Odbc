@@ -15,6 +15,7 @@
       SQLPrepare(SQLHSTMT StatementHandle, *SQLCHAR StatementText, SQLINTEGER TextLength),sqlReturn,pascal,raw,name('SQLPrepareW')
       SQLCloseCursor(SQLHSTMT StatementHandle),sqlReturn,pascal
       SQLMoreResults(SQLHSTMT StatementHandle),sqlReturn,pascal
+      SQLFreeStmt(SQLHSTMT StatementHandle, SQLUSMALLINT Option),sqlReturn,pascal
     end 
   end
 
@@ -69,6 +70,16 @@ odbcClType.destruct procedure()
   return
 ! end destruct
 ! ----------------------------------------------------------------------
+
+odbcClType.unBindColums procedure()
+
+retv sqlReturn
+
+  code
+
+  retv = SQLFreeStmt(self.conn.getHStmt(), SQL_UNBIND)
+
+  return
 
 ! virtual place holder
 odbcClType.formatRow procedure() !,virtual  
@@ -220,7 +231,7 @@ retv       sqlReturn,auto
 ! Binds the columns from the queue to the columns in the result set
 ! then calls fetch to read the result set
 ! -----------------------------------------------------------------------------
-odbcClType.fillResult procedure(*columnsClass cols, *queue q) !,sqlReturn,private
+odbcClType.fillResult procedure(*columnsClass cols, *queue q, long setId = 1) !,sqlReturn,private
 
 retv   sqlReturn 
 
@@ -323,7 +334,8 @@ wideStr CWideStr
    !sqlCode.Cstr()
 
   return retv
-  
+! --------------------------------------------------------------------
+
 odbcClType.execQuery procedure(*IDynStr sqlCode, *columnsClass cols, *ParametersClass params, *queue q) !,sqlReturn,virtual
 
 retv    sqlReturn,auto
@@ -354,16 +366,19 @@ wideStr CWideStr
   code 
   
   res = wideStr.Init(self.sqlStr.cstr())
-  !retv = SQLExecDirect(self.conn.gethStmt(), self.sqlStr.Cstr(), SQL_NTS)
-  retv = SQLExecDirect(self.conn.gethStmt(), wideStr.getWideStr(), SQL_NTS)
+  if (res <= 0) 
+    retv = sql_error
+  else   
+    retv = SQLExecDirect(self.conn.gethStmt(), wideStr.getWideStr(), SQL_NTS)
   
-  if (retV = sql_Success_with_info) 
-    retv = sql_success
+    if (retV = sql_Success_with_info) 
+      retv = sql_success
+    end 
+    if (retv <> sql_success)
+      self.getError()
+    end
   end 
-  if (retv <> sql_success)
-    self.getError()
-  end
-    
+
   return retv
 ! -----------------------------------------------------------------------------
   
@@ -411,9 +426,7 @@ wideStr CWideStr
 retCount long
 
   code
- 
-!  retv = SQLPrepare(self.conn.gethStmt(), self.sqlStr.cstr(), SQL_NTS)
-  !stop(retv)
+
   retCount = wideStr.Init(self.sqlStr.cstr())
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), self.sqlStr.strlen())
   
