@@ -7,6 +7,7 @@
   map 
     module('odbc32')
       SQLBindParameter(SQLHSTMT StatementHandle, SQLUSMALLINT ParameterNumber, SQLSMALLINT InputOutputType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr, SQLLEN BufferLength, *SQLLEN StrLen_or_IndPtr)sqlReturn,pascal      
+      SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength),sqlReturn,pascal,name('SQLSetStmtAttrW')
     end 
     module('c6')
       memmove(long dest, long src, long num),long,proc,name('_memmove')
@@ -71,6 +72,38 @@ ParametersClass.destruct procedure()
 ! destruct 
 ! -----------------------------------------------------------------------------
 
+ParametersClass.bindParameters procedure(SQLHSTMT hStmt, *long numberRows) !,sqlReturn  
+
+retv        sqlReturn   
+count       long,auto
+wideStr     CWideStr
+numberBytes long,auto
+
+  code 
+
+  if (self.setupFailed = true) 
+    return sql_error
+  end   
+  
+  ! once for each parameter
+  loop count = 1 to records(self.paramQ)
+    get(self.paramQ, count)
+    numberBytes = wideStr.Init(self.paramQ.tableName)
+    retv = SQLBindParameter(hStmt, self.paramQ.ParamId, SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_SS_TABLE, self.paramQ.paraSize, 0, wideStr.GetWideStr(), SQL_NTS, numberRows)
+    ! if not a good call then get out, if one is missing the rest do not matter
+    if (retv <> sql_Success) and (retv <> Sql_Success_with_info)
+      break
+    end  
+  end    
+  ! reset for the caller
+  if (retv = Sql_Success_with_info)
+    retv = Sql_Success
+  end
+
+  return retv
+! end bindParameters 
+! ---------------------------------------------------------------------------------
+
 ! -----------------------------------------------------------------------------
 ! bindParameters
 ! Bind parameters for the statement.  A parameter in a sql statement is marked with a ? 
@@ -98,6 +131,7 @@ colInd   &long       ! null pointer, param not used in this example
 retv     sqlReturn   
 count    long,auto
 recCount long,auto
+wideStr  CWideStr
 
   code 
 
@@ -119,52 +153,32 @@ recCount long,auto
   if (retv = Sql_Success_with_info)
     retv = Sql_Success
   end
-    
+
   return retv
 ! end bindParameters 
 ! ---------------------------------------------------------------------------------
 
-ParametersClass.bindParameters procedure(SQLHSTMT hStmt, *sqlStrClType sqlStr) !,sqlReturn  
+ParametersClass.focusTableParameter procedure(SQLHSTMT hStmt, long ordinal)  
 
-colInd      long       ! null pointer, param not used in this example
-retv        sqlReturn   
-paramCount  long(0)
-ss          &cstring
+retv       sqlReturn
 
-  code 
+  code
+                               
+  retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, ordinal, SQL_IS_INTEGER)
 
-  if (instring(eParamIdChar, sqlStr.sqlStr.str(), 1, 1) <= 0)
-    retv = self.bindParameters(hStmt)
-    if (retv <> sql_success)
-      return sql_Error
-    end
-  else   
-    ss &= new(cstring(sqlstr.sqlStr.strLen() + 1))
-    ss = sqlstr.sqlStr.cstr()
-  
-    loop 
-      paramCount = sqlstr.replaceName(self, ss)
-      if (paramCount > 0)
-        retv = SQLBindParameter(hStmt, paramCount, self.paramQ.InOutType, self.paramQ.valueType, self.paramQ.ParamType, self.paramQ.paraSize, self.paramQ.DecimalDigits, self.paramQ.ParamPtr, self.paramQ.paramLength, colInd)
-        if (retv <> sql_Success) and (retv <> sql_Success_with_info)
-          break
-        end 
-      else 
-        break
-      end     
-    end       
- 
-    sqlstr.replaceStr(ss)
-    dispose(ss)
-  end 
-  
-  if (retv = sql_success_with_info) 
-    retv = sql_Success
-  end
-    
-  return retv
-! end bindParameters 
-! ---------------------------------------------------------------------------------
+  return
+! -------------------------------------------------------------------------------
+
+ParametersClass.unfocusTableParameter procedure(SQLHSTMT hStmt)  
+
+retv       sqlReturn
+
+  code
+
+  retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, 0, SQL_IS_INTEGER)
+
+  return
+! -------------------------------------------------------------------------------
 
 ParametersClass.clearQ procedure()
 
@@ -177,6 +191,36 @@ ParametersClass.clearQ procedure()
   return
 ! end clear
 ! ---------------------------------------------------------------------------------
+
+ParametersClass.AddTableParameter procedure(long numberRows, *cstring tableName)  !,sqlReturn,proc
+
+retv sqlReturn
+
+  code
+
+! retv = self.addParameter(SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_SS_TABLE, numberRows, 0, tableName, SQL_NTS)
+  if (self.setupFailed = true) 
+    return sql_error
+  end   
+  
+  self.paramQ.paramId = records(self.ParamQ) + 1
+  self.paramQ.InOutType = SQL_PARAM_INPUT
+  self.paramQ.valueType = SQL_C_DEFAULT
+  self.paramQ.paramType = SQL_SS_TABLE
+  self.paramQ.paraSize = numberRows
+  self.paramQ.DecimalDigits = 0
+  self.paramQ.tableName = tableName
+  self.paramQ.paramLength = SQL_NTS
+  self.paramQ.ParamPtr = 0
+
+  add(self.paramQ)
+  
+  if (errorcode() > 0) 
+    retv = level:notify
+  end 
+
+  return retv
+! ----------------------------------------------------------------------------------
 
 ParametersClass.addParameter procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, | 
                                        SQLSMALLINT ParameterType, SQLULEN ColumnSize, | 

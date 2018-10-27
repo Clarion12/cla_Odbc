@@ -75,10 +75,11 @@ SQL_OV_ODBC3     equate(3)
 
 SQL_C_CHAr       equate(1)
 
-! table type parameter, Server 2008 
+! table type parameter, Server 2008 or better
 SQL_SS_TABLE        equate(-153)
 SQL_SOPT_SS_BASE    equate(1225)
 SQL_SOPT_SS_PARAM_FOCUS equate(SQL_SOPT_SS_BASE+11)
+SQL_C_DEFAULT    equate(99)
 
 SQL_CHAR         equate(1)
 SQL_INTEGER      equate(4)

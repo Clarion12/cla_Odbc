@@ -20,6 +20,7 @@ paraSize          SQLULEN
 DecimalDigits     SQLSMALLINT   
 ParamPtr          SQLPOINTER    
 paramLength       SQLLEN
+tableName         cstring(128)
                 end ! queue 
                 
 !
@@ -33,11 +34,14 @@ kill                  procedure()
 destruct              procedure()
 clearQ                procedure()
 !
+bindParameters        procedure(SQLHSTMT hStmt, *long numberRows),sqlReturn
 bindParameters        procedure(SQLHSTMT hStmt),sqlReturn
-bindParameters        procedure(SQLHSTMT hStmt, *sqlStrClType sqlStr),sqlReturn
+focusTableParameter   procedure(SQLHSTMT hStmt, long ordinal)  
+unfocusTableParameter procedure(SQLHSTMT hStmt)
 ! ----------------------------------------------------------
 ! add the various input parameters
 ! ----------------------------------------------------------
+
 AddInParameter        procedure(*long colPtr),sqlReturn,proc
 AddInParameter        procedure(string pName, *long varPtr),sqlReturn,proc
 AddInParameter        procedure(*cstring colPtr),sqlReturn,proc     
@@ -46,8 +50,9 @@ AddInParameter        procedure(*real colPtr),sqlReturn,proc
 AddInParameter        procedure(string pname, *real colPtr),sqlReturn,proc
 AddInParameter        procedure(*TIMESTAMP_STRUCT colPtr),sqlReturn,proc
 AddInParameter        procedure(string pname, *TIMESTAMP_STRUCT colPtr),sqlReturn,proc
-addParameter          procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc,private
-addParameter          procedure(string paramName, SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc,private
+AddTableParameter     procedure(long numberRows, *cstring tableName),sqlReturn,proc
+addParameter          procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc
+addParameter          procedure(string paramName, SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc
 ! ----------------------------------------------------------------
 ! add the output types
 ! ----------------------------------------------------------------

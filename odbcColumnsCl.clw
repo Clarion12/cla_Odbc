@@ -114,7 +114,7 @@ startRow  long,auto
   return retv 
 ! end bindColumns
 ! ------------------------------------------------------------------------------
-  
+
 columnsClass.clearQ procedure()
 
   code 

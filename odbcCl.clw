@@ -16,6 +16,7 @@
       SQLCloseCursor(SQLHSTMT StatementHandle),sqlReturn,pascal
       SQLMoreResults(SQLHSTMT StatementHandle),sqlReturn,pascal
       SQLFreeStmt(SQLHSTMT StatementHandle, SQLUSMALLINT Option),sqlReturn,pascal
+      !SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength),sqlReturn,pascal 
     end 
   end
 
@@ -176,8 +177,8 @@ hStmt  SQLHSTMT
       break
     of Sql_Success
     orof Sql_Success_with_info
-      add(q)
       self.formatRow()
+      add(q)
     else 
       ! dump the queue, something went wrong and 
       ! the code should not return a partial result set
@@ -307,8 +308,7 @@ retv    sqlReturn,auto
     return sql_error
   end 
   
-  !self.sqlStr.replaceFieldList(cols)
-    
+   
   retv = self.execQuery() 
   !self.getError()
   ! fill the queue
@@ -346,7 +346,8 @@ retv    sqlReturn,auto
     return sql_error
   end 
 
-  retv = self.execQuery(params) 
+  params.bindParameters(self.conn.gethStmt())
+  retv = self.execQuery() 
   
   ! fill the queue
   if (retv = sql_Success)
@@ -396,7 +397,7 @@ retv    sqlReturn(sql_Success)
     return sql_error
   end   
     
-  retv = params.bindParameters(self.conn.getHStmt(), self.sqlStr)
+  retv = params.bindParameters(self.conn.getHStmt())
   
   if (retv = sql_Success)   
     retv = self.execQuery()
@@ -414,7 +415,15 @@ retv   sqlReturn,auto
   retv = SQLPrepare(self.conn.gethStmt(), sqlCode.cstr(), SQL_NTS)
 
   return retv
-  
+! -----------------------------------------------------------------------
+
+odbcClType.execTableSp procedure(string spName, *ParametersClass params, long numberRows) !,sqlReturn,virtual
+
+  code
+
+  return sql_success
+! -----------------------------------------------------------------------
+
 ! -----------------------------------------------------------------------------
 ! execute a stored procedure, 
 ! function calls exec direct with the command text
@@ -427,8 +436,9 @@ retCount long
 
   code
 
+  !stop(self.sqlStr.cstr())
   retCount = wideStr.Init(self.sqlStr.cstr())
-  retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), self.sqlStr.strlen())
+  retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
   
   if (retv <> Sql_Success) and (retv <> Sql_Success_with_info)
     self.getError()  

@@ -15,7 +15,7 @@ _ODBCClassPresent_   EQUATE(1)
 
 odbcClType class,type,module('odbcCl.clw'),link('odbcCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 sqlStr           &sqlStrClType
-conn             &ODBCConnectionClType,private
+conn             &ODBCConnectionClType,protected
 ! set up and tear down
 init             procedure(*ODBCConnectionClType conn),byte,proc
 kill             procedure(),virtual
@@ -45,6 +45,7 @@ execQuery       procedure(*ParametersClass params),sqlReturn,private
 setupQuery      procedure(*IDynStr sqlCode, *columnsClass cols),sqlReturn,private
 !
 ! code to call stored procedures 
+execTableSp    procedure(string spName, *ParametersClass params, long numberRows),sqlReturn,virtual
 execSp         procedure(string spName, *ParametersClass params),sqlReturn,virtual
 execSp         procedure(string spName, *columnsClass cols, *queue q),sqlReturn,virtual
 execSp         procedure(string spName, *columnsClass cols, *ParametersClass params, *queue q),sqlReturn,virtual
@@ -52,8 +53,8 @@ execSp         procedure(string spName, *columnsClass cols, *ParametersClass par
 callScalar     procedure(string spName, *ParametersClass params),sqlReturn 
 ! private
 execSp         procedure(),protected,sqlReturn
-setupSpCall   procedure(string spName),sqlReturn,private
-setupSpCall   procedure(string spName, *ParametersClass params),sqlReturn,private
+setupSpCall   procedure(string spName),sqlReturn,protected
+setupSpCall   procedure(string spName, *ParametersClass params),sqlReturn,protected
             end
 
   _EndOfInclude_
