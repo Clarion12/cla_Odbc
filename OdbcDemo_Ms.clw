@@ -450,7 +450,10 @@ retv   long,auto
     insertQueue.Amount = 21.33
     insertQueue.rowAction = 1
     add(insertQueue)
- 
+
+!   uncomment the following to update a row and delete a row from the table 
+!   in one call
+
 !    insertQueue.SysId = 3
 !    insertQueue.label = 'Tom'
 !    insertQueue.Amount = 99.99
