@@ -29,7 +29,6 @@ setSqlCommand    procedure(string s),sqlReturn,protected
 !
 nextResultSet    procedure(),bool
 fetch            procedure(*queue q),sqlReturn,protected,virtual
-fetchPage        procedure(long sqlDir),sqlReturn,protected
 fillResult       procedure(*columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 getError         procedure(),private
 ! public methods that are used to run a query 

@@ -208,26 +208,7 @@ hStmt  SQLHSTMT
   return retv
 ! end fetch
 ! -----------------------------------------------------------------------------
-
-! -----------------------------------------------------------------------------
-! function to fetch a page from the scrolling cursor,  
-! sqlDir is an equate value, for this example will be next or previous 
-! -----------------------------------------------------------------------------    
-odbcClType.fetchPage  procedure(long sqlDir)
-
-retv       sqlReturn,auto
-
-  code 
-  
-  retv = SQLFetchScroll(self.conn.gethStmt(), sqlDir, 0)
-  
-  if (retv = sql_error)
-    self.getError()
-  end   
-  
-  return retv
-! -----------------------------------------------------------------------------
-  
+ 
 ! -----------------------------------------------------------------------------
 ! Binds the columns from the queue to the columns in the result set
 ! then calls fetch to read the result set
@@ -255,6 +236,9 @@ retv   sqlReturn
 ! end fillResult
 ! -----------------------------------------------------------------------------
 
+! -----------------------------------------------------------------------------
+! call the error class to read the error information
+! -----------------------------------------------------------------------------
 odbcClType.getError procedure() 
 
 retv   sqlReturn
@@ -266,6 +250,7 @@ err    ODBCErrorClType
   err.getError(SQL_HANDLE_STMT, self.conn.getHstmt())
   
   return
+! end getError  
 ! -----------------------------------------------------------------------------
     
 ! ------------------------------------------------------------------------------
@@ -319,7 +304,7 @@ retv    sqlReturn,auto
   
    
   retv = self.execQuery() 
-  !self.getError()
+
   ! fill the queue
   if (retv = sql_Success)
     retv = self.fillResult(cols, q)
@@ -335,7 +320,7 @@ retv    sqlReturn,auto
 ! ----------------------------------------------------------------------
 odbcClType.execQuery procedure(*IDynStr sqlCode) !,sqlReturn,virtual
 
-res     long,auto
+res     long,auto   ! used t oavoid function call warnings
 retv    sqlReturn,auto
 wideStr CWideStr
 
@@ -343,11 +328,13 @@ wideStr CWideStr
   
   res = wideStr.Init(sqlCode.Cstr())
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
-   !sqlCode.Cstr()
 
   return retv
 ! --------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! execute a query that returns a result set and expects parameters
+! ----------------------------------------------------------------------
 odbcClType.execQuery procedure(*IDynStr sqlCode, *columnsClass cols, *ParametersClass params, *queue q) !,sqlReturn,virtual
 
 retv    sqlReturn,auto
@@ -371,6 +358,9 @@ retv    sqlReturn,auto
 ! end execQuery
 ! ----------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! execute a query that does not return a result set
+! ----------------------------------------------------------------------
 odbcClType.execQuery procedure() !,sqlReturn,private
 
 res     long,auto
@@ -394,6 +384,7 @@ wideStr CWideStr
   end 
 
   return retv
+! end execQuery  
 ! -----------------------------------------------------------------------------
   
 ! -----------------------------------------------------------------------------
@@ -537,6 +528,9 @@ retv    sqlReturn
 ! end execSp
 ! ----------------------------------------------------------------------
   
+! ----------------------------------------------------------------------
+! calls a sclar function and puts the returned value in the bound parameter
+! ----------------------------------------------------------------------  
 odbcClType.callScalar procedure(string spName, *ParametersClass params) 
 
 retv    sqlReturn
@@ -552,9 +546,13 @@ retv    sqlReturn
   end  
 
   return retv
-! end execSp
+! end callScalar
 ! ----------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! sets up a call, just formats the string with the {call spname()}
+! this one is used for a stored procedure with no parameters
+! ----------------------------------------------------------------------
 odbcClType.setupSpCall procedure(string spName) 
 
 retv     sqlReturn,auto
@@ -565,7 +563,13 @@ params   &ParametersClass
   retv = self.setupSpCall(spName, params)
   
   return retv 
+! end setupSpCall
+! ----------------------------------------------------------------------
   
+! ----------------------------------------------------------------------
+! sets up a call, just formats the string with the {call spname(?, ...)}
+! this one adds a pllace holder for each parameter
+! ----------------------------------------------------------------------  
 odbcClType.setupSpCall procedure(string spName, *ParametersClass params) ! sqlReturn,private
 
 retv    sqlReturn 
@@ -583,6 +587,8 @@ retv    sqlReturn
   end   
     
   return retv
+! end setupSpCall
+! ----------------------------------------------------------------------  
 
 odbcClType.setupQuery procedure(*IDynStr sqlCode, *columnsClass cols) !,sqlReturn,private
 
@@ -595,3 +601,5 @@ odbcClType.setupQuery procedure(*IDynStr sqlCode, *columnsClass cols) !,sqlRetur
   self.sqlStr.replaceFieldList(cols)
  
   return sql_Success  
+! end setupQuery
+! ----------------------------------------------------------------------  
