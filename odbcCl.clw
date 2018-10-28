@@ -179,6 +179,7 @@ hStmt  SQLHSTMT
   code 
   
   ! start loop and keep looping until an error or no_data is returned  
+  ! use a local for the hadle so the function is not called for each row
   hStmt = self.conn.gethStmt()
   
   loop
@@ -191,6 +192,7 @@ hStmt  SQLHSTMT
       break
     of Sql_Success
     orof Sql_Success_with_info
+      ! format the queue elements for display, if needed, and add the element to the queue
       self.formatRow()
       add(q)
     else 
