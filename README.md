@@ -15,3 +15,4 @@ caling a stored proceudre with out parameters,
 calling a scalar function,
 calling a stored procedure with a table valued parameter, the table input can be used to insert, update and delete rows.
 
+There is a backup of a small 2014 database, file name is odbcdemo.bakup.  the .bakup extension ise used because .bak files are in the git ignore.  be sure to change the default extension when restoring.
