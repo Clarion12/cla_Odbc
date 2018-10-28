@@ -10,6 +10,9 @@
   end
 ! ---------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------
+!  default constructor, calls the init function for the set up
+! ---------------------------------------------------------------------------
 columnsClass.construct procedure()  
 
   code 
@@ -20,12 +23,16 @@ columnsClass.construct procedure()
 ! end construct
 ! ------------------------------------------------------------------------------
   
+! ---------------------------------------------------------------------------
+!  allocates the queue and the dyn str used
+! ---------------------------------------------------------------------------  
 columnsClass.init procedure()
 
 retv      byte(level:benign)
 
   code 
 
+  ! fields list is not yet used
   self.fieldList &= newDynStr()
   if (self.fieldList &= null) 
     return level:notify
@@ -40,6 +47,9 @@ retv      byte(level:benign)
 ! end init 
 ! ------------------------------------------------------------------------------
   
+! ------------------------------------------------------------------------------
+! disposes the queue and the dyn str
+! ------------------------------------------------------------------------------
 columnsClass.kill procedure()
 
   code 
@@ -59,6 +69,9 @@ columnsClass.kill procedure()
 ! end kill
 ! ------------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------
+!  default destructor, calls the kill function for the clean up
+! ---------------------------------------------------------------------------
 columnsClass.destruct procedure()
 
   code 
@@ -69,17 +82,21 @@ columnsClass.destruct procedure()
 ! end destruct
 ! ------------------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------
+! gets the string stored in the dyn str, 
+! returns a cstring 
+! ------------------------------------------------------------------------------
 columnsClass.getFields procedure() !,*cstring,virtual
 
   code 
   
   return self.fieldList.cStr()
-  
+  ! end getFields 
 ! -----------------------------------------------------------------------------
+
 ! bindCols
-! Bind the queue fields to the columns in the result set.
-! Fields and colums must be in the same order, ie the select statement should match 
-! the queue buffer.  
+! Bind the queue, group or seperate fields to the columns in the result set.
+! column order must be the same order as the select statment, 
 ! mapping is ordinal not by name
 ! 
 ! parameters for the ODBC api call 
@@ -99,6 +116,7 @@ startRow  long,auto
 
   code 
   
+  ! iterate over the list, if any fail return an error
   loop x = 1 to records(self.colq)
     get(self.colQ, x)
     retv = SQLBindCol(hStmt, self.colQ.colId, self.Colq.colType, self.colQ.colValue, self.Colq.colSize, colInd)
@@ -107,6 +125,7 @@ startRow  long,auto
     end  
   end   
   
+  ! don't care about info messages here
   if (retv = Sql_Success_With_Info)
     retv = Sql_Success
   end
@@ -115,6 +134,9 @@ startRow  long,auto
 ! end bindColumns
 ! ------------------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------
+! free the queue and the dyn str
+! ------------------------------------------------------------------------------
 columnsClass.clearQ procedure()
 
   code 
@@ -126,6 +148,11 @@ columnsClass.clearQ procedure()
 ! end clearQ
 ! ------------------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------
+! the various addColumn functions are called by the using code and are used for the
+! specific data types.  each calls the AddColumn/3 function to actually 
+! add a columns
+! ------------------------------------------------------------------------------
 columnsClass.AddColumn procedure(*long colPtr) !,sqlReturn,proc
 
 retv   sqlReturn(sql_Success)
@@ -227,12 +254,19 @@ retv   sqlReturn(sql_Success)
 ! end AddColumn
 ! ------------------------------------------------------------------------------
   
+! ------------------------------------------------------------------------------
+! add a column to the objects queue. 
+! the colums will be bound when the execute function is called.
+! typically called by the various addColumn functions but can be called directly
+! ------------------------------------------------------------------------------  
+
 columnsClass.AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength)
 
 retv   sqlReturn(sql_Success)
 
   code 
   
+  ! order is the order the columns are added
   self.colQ.ColId = records(self.colq) + 1
   self.colq.ColType = targetType
   self.colQ.ColValue = TargetValuePtr
@@ -255,3 +289,5 @@ columnsClass.addField procedure(string colLabel)
   end
   
   return
+! end addField
+! ------------------------------------------------------------------------------  
