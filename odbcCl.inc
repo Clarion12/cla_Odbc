@@ -30,11 +30,9 @@ setSqlCommand    procedure(string s),sqlReturn,protected
 nextResultSet    procedure(),bool
 fetch            procedure(*queue q),sqlReturn,protected,virtual
 fetchPage        procedure(long sqlDir),sqlReturn,protected
-closePaging      procedure(),sqlReturn,proc
 fillResult       procedure(*columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 getError         procedure(),private
 ! public methods that are used to run a query 
-prepQuery       procedure(*IDynStr sqlCode),sqlReturn,virtual
 execQuery       procedure(*IDynStr sqlCode),sqlReturn,virtual
 execQuery       procedure(*IDynStr sqlCode, *columnsClass cols, *queue q),sqlReturn,virtual
 execQuery       procedure(*sqlStrClType sqlCode, *columnsClass cols, *queue q),sqlReturn,virtual

@@ -22,7 +22,7 @@
 
 ! ---------------------------------------------------------------------------
 ! Init 
-! sets upt he instance for use.  assigns the connection object input to the 
+! sets up the instance for use.  assigns the connection object input to the 
 ! data member.  allocates and init's the class to handle the sql statment or string. 
 ! ---------------------------------------------------------------------------  
 odbcClType.init procedure(ODBCConnectionClType conn)   
@@ -47,6 +47,9 @@ retv     byte(level:benign)
 ! end Init
 ! ----------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! frees the memory used
+! ----------------------------------------------------------------------
 odbcClType.kill procedure() !,virtual  
 
   code 
@@ -72,6 +75,13 @@ odbcClType.destruct procedure()
 ! end destruct
 ! ----------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! unbinds any columns that are currently bound
+! typical use is when a call that returns multiple result sets is in use.
+! the first result set is processed and then call this to unbind the columns,
+! then bind the caloums for the second result set, 
+! repeat as needed
+! ----------------------------------------------------------------------
 odbcClType.unBindColums procedure()
 
 retv sqlReturn
@@ -81,13 +91,17 @@ retv sqlReturn
   retv = SQLFreeStmt(self.conn.getHStmt(), SQL_UNBIND)
 
   return
+! end unBindColums
+! ----------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
 ! virtual place holder
+! ----------------------------------------------------------------------
 odbcClType.formatRow procedure() !,virtual  
 
   code
   
-  ! format queue elements for display here
+  ! format queue elements for display in the derived object 
   
   return
 ! end formatRow 
@@ -196,20 +210,6 @@ hStmt  SQLHSTMT
 ! -----------------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------
-! when using a scrollable cursor the cursor is closed by calling this function
-! -----------------------------------------------------------------------------
-odbcClType.closePaging procedure() !,sqlReturn
-
-retv    sqlReturn,auto
-
-  code 
-  
-  retv = SQLCloseCursor(self.conn.getHstmt())
-  
-  return retv
-! -----------------------------------------------------------------------------
-
-! -----------------------------------------------------------------------------
 ! function to fetch a page from the scrolling cursor,  
 ! sqlDir is an equate value, for this example will be next or previous 
 ! -----------------------------------------------------------------------------    
@@ -272,7 +272,7 @@ err    ODBCErrorClType
 ! execQuery
 ! execute a query that returns a result set.  
 ! get a connection, prep the statement, execute the statement
-! then fill the queue and close the connection when done
+! then fill the queue or buffers and close the connection when done
 !
 ! this method does not accept the parameters class instance so use this one for queries that 
 ! do not have parameters.
@@ -298,6 +298,15 @@ retv    sqlReturn,auto
 ! end execQuery
 ! ----------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------
+! execQuery, same as the one above with a different type for the sql code input
+! execute a query that returns a result set.  
+! get a connection, prep the statement, execute the statement
+! then fill the queue or buffers and close the connection when done
+!
+! this method does not accept the parameters class instance so use this one for queries that 
+! do not have parameters.
+! ------------------------------------------------------------------------------    
 odbcClType.execQuery procedure(*sqlStrClType sqlCode, *columnsClass cols, *queue q) !,sqlReturn,virtual
 
 retv    sqlReturn,auto
@@ -320,7 +329,10 @@ retv    sqlReturn,auto
 ! end execQuery
 ! ----------------------------------------------------------------------
 
-
+! ----------------------------------------------------------------------
+! execute a query that does not return a result set and does not use any 
+! parameters
+! ----------------------------------------------------------------------
 odbcClType.execQuery procedure(*IDynStr sqlCode) !,sqlReturn,virtual
 
 res     long,auto
@@ -346,7 +358,8 @@ retv    sqlReturn,auto
     return sql_error
   end 
 
-  params.bindParameters(self.conn.gethStmt())
+  retv = params.bindParameters(self.conn.gethStmt())
+
   retv = self.execQuery() 
   
   ! fill the queue
@@ -406,20 +419,14 @@ retv    sqlReturn(sql_Success)
   return retv
 ! -----------------------------------------------------------------------------
 
-odbcClType.prepQuery procedure(*IDynStr sqlCode) !,sqlReturn,virtual
-
-retv   sqlReturn,auto
-
-  code
- 
-  retv = SQLPrepare(self.conn.gethStmt(), sqlCode.cstr(), SQL_NTS)
-
-  return retv
-! -----------------------------------------------------------------------
-
+! -----------------------------------------------------------------------------
+!  virtual place holder
+! -----------------------------------------------------------------------------
 odbcClType.execTableSp procedure(string spName, *ParametersClass params, long numberRows) !,sqlReturn,virtual
 
   code
+ 
+  ! this function must be overloaded in a derived class
 
   return sql_success
 ! -----------------------------------------------------------------------
@@ -430,13 +437,12 @@ odbcClType.execTableSp procedure(string spName, *ParametersClass params, long nu
 ! -----------------------------------------------------------------------------
 odbcClType.execSp procedure() !private,sqlReturn
 
-retv    sqlReturn,auto
-wideStr CWideStr
-retCount long
+retv     sqlReturn,auto
+wideStr  CWideStr
+retCount long  ! used to avoid function warning
 
   code
 
-  !stop(self.sqlStr.cstr())
   retCount = wideStr.Init(self.sqlStr.cstr())
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
   

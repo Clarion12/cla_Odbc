@@ -409,6 +409,52 @@ retv   sqlReturn,auto
 ! end AddInParameter
 ! --------------------------------------------------------------------------------  
 
+! --------------------------------------------------------------------------------  
+! add array parameters, these are always inputs
+! this will be used by table valued input parameters
+! --------------------------------------------------------------------------------  
+ParametersClass.AddLongArray procedure(long array) !,sqlReturn,proc
+
+retv sqlReturn
+
+  code
+  
+  ! add the array, this will always be an input
+  retv = self.addParameter(SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, eSizeLong, 0, array, eSizeLong)
+
+  return retv
+! end AddlongArray
+! ------------------------------------------------------------------------------------
+
+! --------------------------------------------------------------------------------  
+! add array parameters, these are always inputs
+! these parameters will be used by table valued input parameters
+! --------------------------------------------------------------------------------  
+ParametersClass.AddRealArray procedure(long array) !,sqlReturn,proc
+
+retv sqlReturn
+
+  code
+  
+  ! add the array, this will always be an input\
+  retv = self.addParameter(SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, eSizeReal, 0, array, eSizeReal)
+
+  return retv
+! end AddRealArray
+! ------------------------------------------------------------------------------------
+
+ParametersClass.AddCStringArray procedure(long array, long elementSize) !,sqlReturn,proc
+
+retv sqlReturn
+
+  code
+
+  retv = self.addParameter(SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, elementSize, 0, array, elementSize)
+
+  return retv
+! end AddCStringArray
+! --------------------------------------------------------------------------------------  
+
 ! ------------------------------------------------------------------------------------
 ! add the various output parameters
 ! ------------------------------------------------------------------------------------

@@ -259,7 +259,7 @@ err    ODBCErrorClType
 
   code 
   
-  if 9err.init() = sql_success)
+  if (err.init() = sql_success)
     err.getError(handleType, handle)
   end
       

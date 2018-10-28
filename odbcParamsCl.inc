@@ -55,6 +55,10 @@ AddInParameter        procedure(*real colPtr),sqlReturn,proc
 AddInParameter        procedure(string pname, *real colPtr),sqlReturn,proc
 AddInParameter        procedure(*TIMESTAMP_STRUCT colPtr),sqlReturn,proc
 AddInParameter        procedure(string pname, *TIMESTAMP_STRUCT colPtr),sqlReturn,proc
+! add input array parameters
+AddlongArray          procedure(long array),sqlReturn,proc
+AddRealArray          procedure(long array),sqlReturn,proc
+AddCStringArray       procedure(long array, long elementSize),sqlReturn,proc
 ! add a table valued parameter 
 AddTableParameter     procedure(long numberRows, *cstring tableName),sqlReturn,proc
 ! called internall but can be called by the using code, if needed/wanted

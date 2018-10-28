@@ -72,12 +72,18 @@ ParametersClass.destruct procedure()
 ! destruct 
 ! -----------------------------------------------------------------------------
 
+! ----------------------------------------------------------------------
+! call this function when binding a table valued parameter.
+! Note, the numberRows input must remain in scope while the call is being made.
+! the driver writes data back to this value and if it goes out of scope things 
+! things will go south
+! ----------------------------------------------------------------------
 ParametersClass.bindParameters procedure(SQLHSTMT hStmt, *long numberRows) !,sqlReturn  
 
 retv        sqlReturn   
 count       long,auto
 wideStr     CWideStr
-numberBytes long,.auto
+numberBytes long,auto
 
   code 
 
@@ -88,13 +94,15 @@ numberBytes long,.auto
   ! once for each parameter
   loop count = 1 to records(self.paramQ)
     get(self.paramQ, count)
+    ! convert the table type name
     numberBytes = wideStr.Init(self.paramQ.tableName)
     retv = SQLBindParameter(hStmt, self.paramQ.ParamId, SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_SS_TABLE, self.paramQ.paraSize, 0, wideStr.GetWideStr(), SQL_NTS, numberRows)
-    ! if not a good call then get out, if one is missing the rest do not matter
+    ! if check for errors and return failure 
     if (retv <> sql_Success) and (retv <> Sql_Success_with_info)
       break
     end  
   end    
+
   ! reset for the caller
   if (retv = Sql_Success_with_info)
     retv = Sql_Success
@@ -109,7 +117,8 @@ numberBytes long,.auto
 ! Bind parameters for the statement.  A parameter in a sql statement is marked with a ? 
 ! this process binds the actual parameter to that place holder so the back end knows 
 ! what is going on.   The order the parameters are added to the queue MUST match the order 
-! ? marks appear in the sql statement.  There is no mapping by name. 
+! ? marks appear in the sql statement.  There is no mapping by name, yet. 
+!
 ! If a parameter appears in the statement twice or multiple times it must also be in the 
 ! queue twice or how ever many times. 
 ! 
@@ -130,18 +139,15 @@ ParametersClass.bindParameters procedure(SQLHSTMT hStmt) !,sqlReturn
 colInd   &long       ! null pointer, param not used in this example
 retv     sqlReturn   
 count    long,auto
-recCount long,auto
-wideStr  CWideStr
 
   code 
 
   if (self.setupFailed = true) 
     return sql_error
   end   
-  
-  recCount = records(self.paramQ)
+
   ! once for each parameter
-  loop count = 1 to recCount
+  loop count = 1 to records(self.paramQ)
     get(self.paramQ, count)
     retv = SQLBindParameter(hStmt, self.paramQ.ParamId, self.paramQ.InOutType, self.paramQ.valueType, self.paramQ.ParamType, self.paramQ.paraSize, self.paramQ.DecimalDigits, self.paramQ.ParamPtr, self.paramQ.paramLength, colInd)
     ! if not a good call then get out, if one is missing the rest do not matter
@@ -149,6 +155,7 @@ wideStr  CWideStr
       break
     end  
   end    
+
   ! reset for the caller
   if (retv = Sql_Success_with_info)
     retv = Sql_Success
@@ -158,6 +165,11 @@ wideStr  CWideStr
 ! end bindParameters 
 ! ---------------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------------
+! set the focus of the driver tot the table, once the focus is set 
+! bind the columns of the table
+! note, this must be called when using a table valued parameter
+! ---------------------------------------------------------------------------------
 ParametersClass.focusTableParameter procedure(SQLHSTMT hStmt, long ordinal)  
 
 retv       sqlReturn
@@ -166,9 +178,15 @@ retv       sqlReturn
                                
   retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, ordinal, SQL_IS_INTEGER)
 
-  return
+  return retv
+! end focusTableParameter
 ! -------------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------------
+! remove  the focus of the driver from the table, call this after the table columns
+! are bound 
+! note, this must be called when using a table valued parameter
+! ---------------------------------------------------------------------------------
 ParametersClass.unfocusTableParameter procedure(SQLHSTMT hStmt)  
 
 retv       sqlReturn
@@ -177,9 +195,13 @@ retv       sqlReturn
 
   retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, 0, SQL_IS_INTEGER)
 
-  return
+  return retv
+! end unfocusTableParameter
 ! -------------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------------
+! free the queue 
+! ---------------------------------------------------------------------------------
 ParametersClass.clearQ procedure()
 
   code 
@@ -192,26 +214,32 @@ ParametersClass.clearQ procedure()
 ! end clear
 ! ---------------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------------
+! add a table parameter to the call
+! number of rows is the number of rows in the arrays used as the source
+! table name is the name of the table type on the server
+! 
+! if the type name is not found the read will fail
+! ---------------------------------------------------------------------------------
 ParametersClass.AddTableParameter procedure(long numberRows, *cstring tableName)  !,sqlReturn,proc
 
 retv sqlReturn
 
   code
 
-! retv = self.addParameter(SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_SS_TABLE, numberRows, 0, tableName, SQL_NTS)
   if (self.setupFailed = true) 
     return sql_error
   end   
   
   self.paramQ.paramId = records(self.ParamQ) + 1
-  self.paramQ.InOutType = SQL_PARAM_INPUT
-  self.paramQ.valueType = SQL_C_DEFAULT
-  self.paramQ.paramType = SQL_SS_TABLE
-  self.paramQ.paraSize = numberRows
-  self.paramQ.DecimalDigits = 0
-  self.paramQ.tableName = tableName
-  self.paramQ.paramLength = SQL_NTS
-  self.paramQ.ParamPtr = 0
+  self.paramQ.InOutType = SQL_PARAM_INPUT  ! tablesare always inputs
+  self.paramQ.valueType = SQL_C_DEFAULT    ! default for the table type
+  self.paramQ.paramType = SQL_SS_TABLE     ! type
+  self.paramQ.paraSize = numberRows        
+  self.paramQ.DecimalDigits = 0            ! always zero for the table type
+  self.paramQ.tableName = tableName   
+  self.paramQ.paramLength = SQL_NTS         
+  self.paramQ.ParamPtr = 0                 ! always zero or a null pointer
 
   add(self.paramQ)
   
@@ -220,8 +248,13 @@ retv sqlReturn
   end 
 
   return retv
+! end AddTableParameter  
 ! ----------------------------------------------------------------------------------
 
+! ----------------------------------------------------------------------------------
+! add a parameter to the queue.  typically called internally but can be used 
+! from anywhere if needed desired.
+! ----------------------------------------------------------------------------------
 ParametersClass.addParameter procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, | 
                                        SQLSMALLINT ParameterType, SQLULEN ColumnSize, | 
                                        SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, | 
@@ -254,6 +287,9 @@ retv     byte(level:benign)
 ! end addParameter
 ! ------------------------------------------------------------------------------------
 
+! ----------------------------------------------------------------------------------
+! add a parameter to the queue by name.  not yet used 
+! ----------------------------------------------------------------------------------
 ParametersClass.addParameter procedure(string paramName, |
                                        SQLSMALLINT InOutType, SQLSMALLINT ValueType, | 
                                        SQLSMALLINT ParameterType, SQLULEN ColumnSize, | 
@@ -274,6 +310,9 @@ retv     byte,auto
 ! end addParameter
 ! ------------------------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------------
+! add the various input parameters
+! ------------------------------------------------------------------------------------
 ParametersClass.AddInParameter procedure(*long varPtr)
 
 retv   sqlReturn
@@ -295,7 +334,9 @@ retv   sqlReturn
   self.addParameter(pName, SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, eSizeLong, 0, address(varPtr), eSizeLong)
   
   return retv
-   
+! end AddInParameter
+! --------------------------------------------------------------------------------
+
 ParametersClass.AddInParameter procedure(*real varPtr) !,sqlReturn,proc
 
 retv   sqlReturn
@@ -368,6 +409,53 @@ retv   sqlReturn,auto
 ! end AddInParameter
 ! --------------------------------------------------------------------------------  
 
+! --------------------------------------------------------------------------------  
+! add array parameters, these are always inputs
+! this will be used by table valued input parameters
+! --------------------------------------------------------------------------------  
+ParametersClass.AddLongArray procedure(long array) !,sqlReturn,proc
+
+retv sqlReturn
+
+  code
+  
+  ! add the array, this will always be an input
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, eSizeLong, 0, address(array), eSizeLong)
+
+  return retv
+! end AddlongArray
+! ------------------------------------------------------------------------------------
+
+! --------------------------------------------------------------------------------  
+! add array parameters, these are always inputs
+! this will be used by table valued input parameters
+! --------------------------------------------------------------------------------  
+ParametersClass.AddRealArray procedure(long array) !,sqlReturn,proc
+
+retv sqlReturn
+
+  code
+  
+  ! add the array, this will always be an input\
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, eSizeReal, 0, address(array), eSizeReal)
+
+  return retv
+! end AddRealArray
+! ------------------------------------------------------------------------------------
+
+ParametersClass.AddCStringArray procedure(long array, long elementSize) !,sqlReturn,proc
+
+  code
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, elementSize, 0, address(array), elementSize)
+
+  return
+! end AddCStringArray
+! --------------------------------------------------------------------------------------  
+
+! ------------------------------------------------------------------------------------
+! add the various output parameters
+! ------------------------------------------------------------------------------------
 ParametersClass.AddOutParameter procedure(*long varPtr) !,sqlReturn,proc
 
 retv   sqlReturn,auto
@@ -377,7 +465,8 @@ retv   sqlReturn,auto
   retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_SLONG, SQL_INTEGER, eSizeLong, 0, address(varPtr), eSizeLong)
 
   return retv
-! ------------------------------------------------------------------------------
+! end AddOutParameter
+! --------------------------------------------------------------------------------
 
 ParametersClass.AddOutParameter procedure(*cstring varPtr) !,sqlReturn,proc
 
@@ -388,7 +477,8 @@ retv   sqlReturn,auto
   retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_CHAR, SQL_CHAR, size(varPtr), 0, address(varPtr), size(varPtr))
 
   return retv
-! ------------------------------------------------------------------------------
+! end AddOutParameter
+! --------------------------------------------------------------------------------
 
 ParametersClass.FillPlaceHolders procedure(sqlStrClType sqlCode, long startPos = 1) 
 
@@ -408,6 +498,8 @@ recCount long
   end       
 
   return recCount
+! end FillPlaceHolders
+! --------------------------------------------------------------------------------  
 
 ParametersClass.findByParamName procedure(string pName) !,sqlReturn
 
@@ -422,3 +514,5 @@ retv   sqlReturn(sql_Success)
   end  
   
   return retv
+! end findByParamName
+! --------------------------------------------------------------------------------  
