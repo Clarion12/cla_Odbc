@@ -354,20 +354,32 @@ tableTypeName cstring('LabelDemoType')
 
   code
 
+  ! add some demo data
   self.query.fillInsertQueue()
-
+  
+  ! add the table parameter
   parameters.init()
   retv = parameters.AddTableParameter(records(insertQueue), tableTypeName)
  
-  self.msconn.Connect()
-  
+  self.msconn.Connect()  
   retv = self.query.execTableSp('dbo.InsertTable', parameters, records(insertQueue))
-
   SELF.msConn.Disconnect()
 
   return
 ! --------------------------------------------------------------------------    
 
+! --------------------------------------------------------------------------    
+! some notes on this call 
+! 
+! the number of rows input must remain in scope while the call is being processed.  
+! the driver will write back to this value and if it goes out of scope the 
+! driver will still write the information back but no one know where it will
+! go.  
+! the arrays need to reamina in scope.  
+! the arrays are declared here so they can be created wit hthe input value.
+! clarion really needs dynamic arrays and a pointer type but those are 
+! never goinf to happen.  
+! --------------------------------------------------------------------------    
 DemoQuery.execTableSp procedure(string spName, *ParametersClass param, long numberRows) !,sqlReturn,virtual
 
 retv  sqlReturn
@@ -386,7 +398,7 @@ typeName       cstring('dbo.LabelDemoType')
   if (numberRows <= 0) 
     return sql_error
   end 
-
+  ! fill the arrays from the queue
   loop x = 1 to numberRows
     get(insertQueue, x)
     sysIdArray[x] = insertQueue.sysId
@@ -399,20 +411,22 @@ typeName       cstring('dbo.LabelDemoType')
 
   retv = param.bindParameters(self.conn.gethStmt(),numberRows)
   
+  ! init the parameters for the arrays and set the focus to the table
   tabelvalues.Init()
 
   tabelvalues.focusTableParameter(self.conn.gethStmt(), 1)
-
+  ! add the arrays and bind 
   tabelvalues.AddlongArray(address(sysIdArray))  
   tabelvalues.AddCStringArray(address(labelArray), size(labelArray[1]))
   tabelvalues.addrealArray(address(amountArray))
   tabelvalues.AddlongArray(address(rowActionArray))  
-
-  retv = tabelvalues.bindParameters(self.conn.gethStmt())
  
+  retv = tabelvalues.bindParameters(self.conn.gethStmt())
+
+  ! remove the focus  and execute
   tabelvalues.unfocusTableParameter(self.conn.gethStmt())
 
-  retv = self.execSp()
+  retv = self.execSp( )
 
   return retv
 ! ------------------------------------------------------------------------------------
