@@ -124,12 +124,18 @@ retv            sqlReturn
 ! out form API calls.
 ! 
 ! if the statement parameter is true, the default, a statement handle is allocated 
+! if false then the statement handle will need t obe allocated from the calling code
+!
+! typically better t ouse the default and just let this block allocate the statement handle
+! one less step for the using code
 ! --------------------------------------------------------------------------
 ODBCConnectionClType.connect procedure(bool statement = withStatement)
 
 retv       sqlReturn,auto
 outLength  sqlsmallint
 
+! 501 is an arbitray value, the output connection string could be larger
+! but we don't use it, so no one cares
 outConnStr cstring(501)
 
 wideStr    Cwidestr
@@ -139,6 +145,8 @@ outs cstr
 
   code 
   
+  ! if there is already a handle (connect was called twice) just retunr success
+  ! consider changing to throw na error, if called twice it is a programming error
   if (self.hdbc.getHandle() <= 0)
     retv = self.hDbc.allocateHandle(SQL_HANDLE_DBC, self.hEnv.getHandle())
   else
@@ -157,6 +165,10 @@ outs cstr
     end
 
     retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), size(outConnStr), outLength, SQL_DRIVER_NOPROMPT)
+
+    ! ---------------------------------------------------
+    ! demo code, show the additional error messages that are avaliable from the driver
+    ! ---------------------------------------------------
     !if (retv <> Sql_Success)
     !  self.getDatabaseError()
     !end  
@@ -171,7 +183,7 @@ outs cstr
   if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
     self.getDatabaseError()
   else 
-    ! allocate the statement handle if needed
+    ! allocate the statement handle if needed/wanted
     if (statement = true) 
       retv = self.hStmt.AllocateHandle(SQL_HANDLE_STMT, self.hDbc.getHandle())
       if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
@@ -208,9 +220,13 @@ h         SQLHDBC,auto
   h = self.hDbc.getHandle()
   if (h > 0)
     retv = SQLDisconnect(h)
+    ! unlikely that an error will happen here or if it does that any cares 
+    ! but grab the error, mainly for development purposes
     if (retv <> sql_Success) and (retv <> sql_Success_With_Info)
       self.getDatabaseError()
-    else
+    end
+    ! 'don't care about info messages here
+    if (retv = sql_Success_With_Info)
       ! if with info reset for the caller
       retv = sql_Success  
     end
@@ -220,6 +236,9 @@ h         SQLHDBC,auto
 ! end Disconnect 
 ! ----------------------------------------------------------------------
   
+! ----------------------------------------------------------------------
+! two function to call the error class if needed
+! ----------------------------------------------------------------------
 ODBCConnectionClType.getDatabaseError procedure() !,virtual,protected  
 
 err    ODBCErrorClType
@@ -231,14 +250,18 @@ err    ODBCErrorClType
   end
 
   return 
-  
+! end getDatabaseError
+! ----------------------------------------------------------------------
+
 ODBCConnectionClType.getError procedure(SQLSMALLINT HandleType, SQLHANDLE Handle)  
 
 err    ODBCErrorClType
 
   code 
   
-  err.getError(handleType, handle)
+  if 9err.init() = sql_success)
+    err.getError(handleType, handle)
+  end
       
   return 
 ! end getError 
