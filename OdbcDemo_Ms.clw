@@ -18,7 +18,7 @@ DemoQuery  class(odbcClType)
 formatRow    procedure(),virtual
 fillResult   procedure(*columnsClass cols, *queue q),sqlReturn,protected
 execTableSp  procedure(string spName, *ParametersClass param, long numberRows),sqlReturn,virtual
-fillInsertQueue procedure()
+fillInsertQueue procedure(),long
            end
 
 databaseGroup group,type
@@ -308,6 +308,7 @@ nameFilter    cstring('Barney')
   SELF.msConn.Disconnect()
 
   return
+! --------------------------------------------------------------------------    
 
 thisWindow.readMulti procedure()
 
@@ -351,18 +352,19 @@ retv          sqlReturn
 parameters    ParametersClass
 param         long,auto 
 tableTypeName cstring('LabelDemoType')
+rows          long,auto
 
   code
 
   ! add some demo data
-  self.query.fillInsertQueue()
+  rows = self.query.fillInsertQueue()
   
   ! add the table parameter
   parameters.init()
-  retv = parameters.AddTableParameter(records(insertQueue), tableTypeName)
+  retv = parameters.AddTableParameter(rows, tableTypeName)
  
   self.msconn.Connect()  
-  retv = self.query.execTableSp('dbo.InsertTable', parameters, records(insertQueue))
+  retv = self.query.execTableSp('dbo.InsertTable', parameters, rows)
   SELF.msConn.Disconnect()
 
   return
@@ -431,7 +433,9 @@ typeName       cstring('dbo.LabelDemoType')
   return retv
 ! ------------------------------------------------------------------------------------
 
-DemoQuery.fillInsertQueue procedure()
+DemoQuery.fillInsertQueue procedure() !long
+
+retv   long,auto
 
     code
 
@@ -456,9 +460,10 @@ DemoQuery.fillInsertQueue procedure()
 !    insertQueue.SysId = 2
 !    insertQueue.rowAction = 3
 !    add(insertQueue)
+    
+    retv = records(insertQueue)
 
-
-    return
+    return retv
 ! ------------------------------------------------------------------------------------    
 
 DemoQuery.fillResult   procedure(*columnsClass cols, *queue q) !,sqlReturn,protected
