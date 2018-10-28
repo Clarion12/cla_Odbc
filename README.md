@@ -11,7 +11,7 @@ Anyway. the code uses the svcom.* files to convert the ansi string from clarion 
 there are examples of calling a query, 
 calling stored procedures, with and without parameters,
 calling a stored procedure with multiple result sets, the demo use two result sets.
-caling a stroed proceudre with out parameters,
+caling a stored proceudre with out parameters,
 calling a scalar function,
 calling a stored procedure with a table valued parameter, the table input can be used to insert, update and delete rows.
 
