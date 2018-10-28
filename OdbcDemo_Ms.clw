@@ -146,8 +146,8 @@ retv    byte,auto
     if (retv = sql_Success)
       message('Congratulations, a connection to the MS-SQL Server Database has been established.', 'Success', icon:exclamation)
     end
-
     SELF.msConn.Disconnect(withoutStatement)
+    
   of ?btnRead
     self.readTable()
   of ?btnReadSp

@@ -96,8 +96,7 @@ columnsClass.getFields procedure() !,*cstring,virtual
 
 ! bindCols
 ! Bind the queue, group or seperate fields to the columns in the result set.
-! column order must be the same order as the select statment, 
-! mapping is ordinal not by name
+! column order is typically the  same order as the select statment,
 ! 
 ! parameters for the ODBC api call 
 ! hStmt   = handle to the ODBC statement
