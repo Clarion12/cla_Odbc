@@ -10,8 +10,11 @@
       SQLConnect(SQLHDBC ConnectionHandle, *SQLCHAR ServerName, SQLSMALLINT NameLength1, long UserName, SQLSMALLINT NameLength2, long Authentication, SQLSMALLINT NameLength3),sqlReturn,pascal,raw
       SQLDriverConnect(SQLHDBC ConnectionHandle, SQLHWND WindowHandle, long InConnectionString, SQLSMALLINT StringLength1, long  OutConnectionString, SQLSMALLINT BufferLength, *SQLSMALLINT StringLength2Ptr, SQLUSMALLINT DriverCompletion),sqlReturn,pascal,raw,Name('SQLDriverConnectW')
       SQLDisconnect(SQLHDBC ConnectionHandle),sqlReturn,pascal   
-      SQLGetInfo(long hDbc, long attrib, *cstring valuePtr, long buffLength, *long strLenPtr),long,pascal,raw
+      SQLGetInfo(SQLHDBC hDbc, long attrib, *cstring valuePtr, long buffLength, *long strLenPtr),long,pascal,raw
       SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,  SQLPOINTER Value, SQLINTEGER StringLength),sqlReturn,pascal
+      SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER attribute, SQLPOINTER value, SQLINTEGER id),long,pascal,Name('SQLSetStmtAttrW')
+      SQLSetConnectAttr(SQLHDBC Handle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength),sqlReturn,pascal,name('SQLSetConnectAttrW')
+      SQLGetConnectAttr(SQLHDBC Handle, SQLINTEGER Attribute, *SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER StringLengthPtr),sqlReturn,pascal,name('SQLGetConnectAttrW')
     end 
   end
 
@@ -93,13 +96,52 @@ ODBCConnectionClType.gethEnv procedure() !,SQLHEnv
   
 ODBCConnectionClType.gethDbc procedure() !,SQLHDBC
 
+dbHandle    SQLHDBC(0)
+
   code 
-  return self.hDbc.getHandle()
+
+  if (~self.hdbc &= null)
+    dbHandle = self.hDbc.getHandle()
+  end 
+  
+  return dbHandle
  
 ODBCConnectionClType.gethStmt procedure() !,SQLHStmt
 
   code 
   return self.hStmt.gethandle()
+! ---------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------
+! checks to see if the connection is dead or active.  the call to get the 
+! connection attribute sets the status field to false if the connection is active
+! and to true if the connection is dead, so the return value is set to false 
+! at the start and if the connection is not dead then it is set to true
+! ---------------------------------------------------------------------------
+ODBCConnectionClType.isConnected procedure() !,bool
+
+res      sqlReturn,auto
+retv     bool(false)    ! assume the connection is dead or not active at the start
+status   long,auto  
+dbHandle SQLHDBC,auto
+
+  code
+
+  ! get the current connection handle, check for a value.  
+  dbHandle = self.gethDbc()
+  ! if > 0 then it has been connected
+  if (dbHandle > 0) 
+    ! get the staus, if the res is not good then just assume the connection is not active
+    res = SQLGetConnectAttr(dbHandle, SQL_ATTR_CONNECTION_DEAD, status, SQL_IS_POINTER, 0)
+    if (res = Sql_Success) 
+      if (status = SQL_CD_FALSE)
+        ! connection is active so return true
+        retv = true
+      end
+    end  ! if (res = Sql_Success) 
+  end ! if (dbHandle > 0) 
+
+  return retv
 ! ---------------------------------------------------------------------------
 
 ODBCConnectionClType.setOdbcVersion procedure(long verId) 
@@ -109,7 +151,7 @@ retv            sqlReturn
 
   code
 
-  !retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
+  retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
   
   if (retv <> Sql_Success) 
     err.getError(SQL_HANDLE_ENV, self.gethEnv())
@@ -155,6 +197,7 @@ outs cstr
 
   if (retv = sql_Success) or (retv = sql_success_with_info)
     ! make the connection string a wide string for the ODBC 
+    stop(self.connStr.ConnectionString())
     if (wideStr.init(self.connStr.ConnectionString()) = false) 
       return sql_Error
     end

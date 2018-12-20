@@ -42,6 +42,8 @@ bindParameters        procedure(SQLHSTMT hStmt, *long numberRows),sqlReturn
 bindParameters        procedure(SQLHSTMT hStmt),sqlReturn
 focusTableParameter   procedure(SQLHSTMT hStmt, long ordinal),sqlReturn,proc  
 unfocusTableParameter procedure(SQLHSTMT hStmt),sqlReturn,proc
+
+HasParameters         procedure(),bool
 ! ----------------------------------------------------------
 ! add the various input parameters
 ! the overloads with the name input are not yet used but cause no harm if called

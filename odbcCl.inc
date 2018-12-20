@@ -31,6 +31,8 @@ nextResultSet    procedure(),bool
 fetch            procedure(*queue q),sqlReturn,protected,virtual
 fillResult       procedure(*columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 getError         procedure(),private
+!
+endAsync         procedure(),sqlReturn
 ! public methods that are used to run a query 
 execQuery       procedure(*IDynStr sqlCode),sqlReturn,virtual
 execQuery       procedure(*IDynStr sqlCode, *columnsClass cols, *queue q),sqlReturn,virtual
@@ -43,6 +45,7 @@ setupQuery      procedure(*IDynStr sqlCode, *columnsClass cols),sqlReturn,privat
 !
 ! code to call stored procedures 
 execTableSp    procedure(string spName, *ParametersClass params, long numberRows),sqlReturn,virtual
+execSp         procedure(string spName),sqlReturn,virtual
 execSp         procedure(string spName, *ParametersClass params),sqlReturn,virtual
 execSp         procedure(string spName, *columnsClass cols, *queue q),sqlReturn,virtual
 execSp         procedure(string spName, *columnsClass cols, *ParametersClass params, *queue q),sqlReturn,virtual

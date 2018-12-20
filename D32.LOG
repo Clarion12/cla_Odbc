@@ -1,0 +1,224 @@
+Started 
+Heap handle: 01970000
+start process C:\git_repo\ODBC\OdbcDemo_Ms.exe
+Command line :> C60dbx C:\CLARION6\BIN\C60EE.RED "C:\CLARION6\BIN\C60EE.ini" "C:\git_repo\ODBC\OdbcDemo_Ms.exe"
+Command line :> "C:\git_repo\ODBC\OdbcDemo_Ms.exe" 
+Redirection file :> C:\CLARION6\BIN\C60EE.RED
+CREATE_PROCESS_DEBUG_EVENT  ! No image name found
+g.debug_name C:\git_repo\ODBC\OdbcDemo_Ms.exe
+BaseOfImage                00400000
+CREATE_PROCESS_DEBUG_EVENT: process main thread tid=00000DC0
+thread handle=000002E4
+ntdll.dll Loaded at: 77A20000
+No debug information
+KERNEL32.dll Loaded at: 76E20000
+No debug information
+KERNELBASE.dll Loaded at: 74860000
+No debug information
+CREATE_THREAD_DEBUG_EVENT: tid=00001268
+thread handle=00000300
+CREATE_THREAD_DEBUG_EVENT: tid=00002634
+thread handle=00000304
+OLEAUT32.dll Loaded at: 769F0000
+No debug information
+CREATE_THREAD_DEBUG_EVENT: tid=00001228
+thread handle=0000030C
+msvcp_win.dll Loaded at: 74AE0000
+No debug information
+msodbcsql13.dll Loaded at: 64630000
+No debug information
+ucrtbase.dll Loaded at: 74B60000
+No debug information
+combase.dll Loaded at: 76EC0000
+No debug information
+RPCRT4.dll Loaded at: 775B0000
+No debug information
+USER32.dll Loaded at: 77680000
+No debug information
+C60RUNX.dll Loaded at: 01000000
+WslDb$$NotifyDebugger 010A43E0
+C60ASCX.dll Loaded at: 00170000
+No debug information
+UNLOAD_DLL_DEBUG_EVENT: BaseOfDll 00170000
+bcryptPrimitives.dll Loaded at: 744D0000
+No debug information
+ADVAPI32.dll Loaded at: 779A0000
+No debug information
+win32u.dll Loaded at: 746D0000
+No debug information
+msvcrt.dll Loaded at: 752D0000
+No debug information
+GDI32.dll Loaded at: 76A90000
+No debug information
+ODBC32.dll Loaded at: 64590000
+No debug information
+gdi32full.dll Loaded at: 746F0000
+No debug information
+SECHOST.dll Loaded at: 76AF0000
+No debug information
+CRYPT32.dll Loaded at: 74530000
+No debug information
+ole32.dll Loaded at: 75540000
+No debug information
+MSASN1.dll Loaded at: 74440000
+No debug information
+COMDLG32.dll Loaded at: 778C0000
+No debug information
+COMDLG32.dll Loaded at: 009A0000
+No debug information
+UNLOAD_DLL_DEBUG_EVENT: BaseOfDll 009A0000
+WS2_32.dll Loaded at: 76DB0000
+No debug information
+SHCORE.dll Loaded at: 76CC0000
+No debug information
+COMCTL32.dll Loaded at: 5FA60000
+No debug information
+SHLWAPI.dll Loaded at: 76D50000
+No debug information
+SHELL32.dll Loaded at: 75640000
+No debug information
+VERSION.dll Loaded at: 6DED0000
+No debug information
+NETAPI32.dll Loaded at: 6F370000
+No debug information
+CFGMGR32.dll Loaded at: 74A50000
+No debug information
+MSWSOCK.dll Loaded at: 73D70000
+No debug information
+Secur32.dll Loaded at: 6CFE0000
+No debug information
+Windows.Storage.dll Loaded at: 74C80000
+No debug information
+WININET.dll Loaded at: 5FF10000
+No debug information
+MSVCR120.dll Loaded at: 644A0000
+No debug information
+AppCore.dll Loaded at: 74470000
+No debug information
+MSVCP120.dll Loaded at: 64420000
+No debug information
+profapi.dll Loaded at: 74450000
+No debug information
+DPAPI.dll Loaded at: 73A40000
+No debug information
+POWRPROF.dll Loaded at: 74480000
+No debug information
+FLTLIB.DLL Loaded at: 74430000
+No debug information
+SspiCli.dll Loaded at: 74340000
+No debug information
+MPR.dll Loaded at: 6CFF0000
+No debug information
+WINSPOOL.DRV Loaded at: 6F600000
+No debug information
+oledlg.dll Loaded at: 58320000
+No debug information
+PROPSYS.dll Loaded at: 71790000
+No debug information
+IPHLPAPI.DLL Loaded at: 73B60000
+No debug information
+bcrypt.dll Loaded at: 73FF0000
+No debug information
+C60ASCX.dll Loaded at: 00170000
+No debug information
+IMM32.dll Loaded at: 76AC0000
+No debug information
+UxTheme.dll Loaded at: 72DB0000
+No debug information
+MSCTF.dll Loaded at: 753F0000
+No debug information
+dwmapi.dll Loaded at: 72FD0000
+No debug information
+LOAD_DLL_DEBUG_EVENT ! No image name found
+BaseOfDll            00500000
+No debug information
+UNLOAD_DLL_DEBUG_EVENT: BaseOfDll 00500000
+LOAD_DLL_DEBUG_EVENT ! No image name found
+BaseOfDll            00500000
+No debug information
+netbios.dll Loaded at: 64D50000
+No debug information
+CREATE_THREAD_DEBUG_EVENT: tid=00001F04
+thread handle=000003E8
+TextInputFramework.dll Loaded at: 63350000
+No debug information
+CoreMessaging.dll Loaded at: 72720000
+No debug information
+CoreUIComponents.dll Loaded at: 70F60000
+No debug information
+NTMARTA.dll Loaded at: 73780000
+No debug information
+WinTypes.dll Loaded at: 70E60000
+No debug information
+WinTypes.dll Loaded at: 03D70000
+No debug information
+UNLOAD_DLL_DEBUG_EVENT: BaseOfDll 03D70000
+WinTypes.dll Loaded at: 03C90000
+No debug information
+UNLOAD_DLL_DEBUG_EVENT: BaseOfDll 03C90000
+CREATE_THREAD_DEBUG_EVENT: tid=000024D8
+thread handle=00000410
+CRYPTBASE.dll Loaded at: 73F10000
+No debug information
+CREATE_THREAD_DEBUG_EVENT: tid=0000109C
+thread handle=0000041C
+CLUSAPI.dll Loaded at: 6C1C0000
+No debug information
+DNSAPI.dll Loaded at: 73B90000
+No debug information
+NSI.dll Loaded at: 76DA0000
+No debug information
+RESUTILS.dll Loaded at: 6C9D0000
+No debug information
+Security.dll Loaded at: 46480000
+No debug information
+SCHANNEL.dll Loaded at: 73960000
+No debug information
+instapi.dll Loaded at: 48060000
+No debug information
+MSVCR80.dll Loaded at: 64380000
+No debug information
+CREATE_THREAD_DEBUG_EVENT: tid=00000F4C
+thread handle=000003FC
+CREATE_THREAD_DEBUG_EVENT: tid=00002744
+thread handle=00000454
+mskeyprotect.dll Loaded at: 64A10000
+No debug information
+ncrypt.dll Loaded at: 73FD0000
+No debug information
+NTASN1.dll Loaded at: 73FA0000
+No debug information
+ncryptsslp.dll Loaded at: 63590000
+No debug information
+Kerberos.dll Loaded at: 73E20000
+No debug information
+msv1_0.dll Loaded at: 73D00000
+No debug information
+NtlmShared.dll Loaded at: 73CF0000
+No debug information
+cryptdll.dll Loaded at: 73DD0000
+No debug information
+NTDSAPI.dll Loaded at: 5F8C0000
+No debug information
+DSPARSE.dll Loaded at: 6F310000
+No debug information
+logoncli.dll Loaded at: 6FBF0000
+No debug information
+netutils.dll Loaded at: 73C20000
+No debug information
+CREATE_THREAD_DEBUG_EVENT: tid=000026C8
+thread handle=000004A8
+CREATE_THREAD_DEBUG_EVENT: tid=00001E6C
+thread handle=00000488
+EXIT_THREAD_DEBUG_EVENT: tid=000024D8
+EXIT_THREAD_DEBUG_EVENT: tid=00001F04
+EXIT_THREAD_DEBUG_EVENT: tid=00001E6C
+EXIT_THREAD_DEBUG_EVENT: tid=000026C8
+EXIT_THREAD_DEBUG_EVENT: tid=00002744
+EXIT_THREAD_DEBUG_EVENT: tid=00000F4C
+EXIT_THREAD_DEBUG_EVENT: tid=0000109C
+EXIT_THREAD_DEBUG_EVENT: tid=00001228
+EXIT_THREAD_DEBUG_EVENT: tid=00002634
+EXIT_THREAD_DEBUG_EVENT: tid=00001268
+EXIT_PROCESS_DEBUG_EVENT: pid=0000235C
+EXIT_THREAD_DEBUG_EVENT: tid=00000DC0

@@ -16,8 +16,11 @@
       SQLCloseCursor(SQLHSTMT StatementHandle),sqlReturn,pascal
       SQLMoreResults(SQLHSTMT StatementHandle),sqlReturn,pascal
       SQLFreeStmt(SQLHSTMT StatementHandle, SQLUSMALLINT Option),sqlReturn,pascal
-      !SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength),sqlReturn,pascal 
-    end 
+      !SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength),sqlReturn,pascal
+    end
+    module('odbcdr')
+      SQLCompleteAsync(SQLSMALLINT HandleType, SQLHSTMT Handle,  *RETCODE AsyncRetCodePtr),sqlreturn,pascal,name('SQLCompleteAsync')
+    end
   end
 
 ! ---------------------------------------------------------------------------
@@ -88,7 +91,11 @@ retv sqlReturn
 
   code
 
-  retv = SQLFreeStmt(self.conn.getHStmt(), SQL_UNBIND)
+  ! if therer is a statment handle then unbind
+  ! if not then nothing to do
+  if (self.conn.getHStmt() > 0) 
+    retv = SQLFreeStmt(self.conn.getHStmt(), SQL_UNBIND)
+  end
 
   return
 ! end unBindColums
@@ -250,11 +257,23 @@ err    ODBCErrorClType
   
   retv = err.Init()
   err.getError(SQL_HANDLE_STMT, self.conn.getHstmt())
-  
+
   return
 ! end getError  
 ! -----------------------------------------------------------------------------
     
+odbcClType.endAsync procedure() !sqlreturn
+
+retv     sqlReturn
+outCode  retcode
+
+  code
+
+  retv = SQLCompleteAsync(SQL_HANDLE_STMT, self.conn.getHStmt(), outCode)
+
+  return retv
+! -----------------------------------------------------------------------------
+
 ! ------------------------------------------------------------------------------
 ! execQuery
 ! execute a query that returns a result set.  
@@ -454,6 +473,33 @@ retCount long  ! used to avoid function warning
 ! ------------------------------------------------------------------------------
 ! execSp
 ! call an stored procedure that does not return a value or a result set. 
+! ------------------------------------------------------------------------------  
+odbcClType.execSp procedure(string spName) !,sqlReturn
+
+params  &ParametersClass
+retv    sqlReturn 
+
+  code 
+  
+  if (self.setupSpCall(spName, params) <> sql_Success)
+    return sql_Error
+  end 
+  
+  if (~params &= null) 
+    retv = params.bindParameters(self.conn.gethStmt())
+  end
+  
+  if (retv = sql_Success) 
+    retv = self.execSp()
+  end  
+
+  return retv 
+! end execSp
+! ----------------------------------------------------------------------
+
+! ------------------------------------------------------------------------------
+! execSp
+! call an stored procedure that does not return a value or a result set. 
 ! binds any parameters and calls execSp/0
 ! ------------------------------------------------------------------------------  
 odbcClType.execSp procedure(string spName, *ParametersClass params) !,sqlReturn
@@ -466,7 +512,9 @@ retv    sqlReturn
     return sql_Error
   end 
   
-  retv = params.bindParameters(self.conn.gethStmt())
+  if (~params &= null) 
+    retv = params.bindParameters(self.conn.gethStmt())
+  end
   
   if (retv = sql_Success) 
     retv = self.execSp()

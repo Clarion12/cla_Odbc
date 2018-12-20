@@ -12,6 +12,9 @@
    
     map
       main()
+      module('callAsync.clw')
+        callAsyncSp(string connStr)
+      end
     end
 
 DemoQuery  class(odbcClType)
@@ -68,6 +71,7 @@ ReadOutSp    procedure()
 callScalar   procedure()
 readMulti    procedure()
 insertTvp    procedure()
+callAsync    procedure()
            end
 
 filterLabel    string(60)  
@@ -78,6 +82,7 @@ Window WINDOW('Connect'),AT(,,295,278),FONT('MS Sans Serif',8,,FONT:regular),CEN
        PROMPT('Datbase Name:'),AT(32,39),USE(?Prompt1)
        ENTRY(@s40),AT(88,39,117,10),USE(thisWindow.dbName)
        BUTTON('Table Sp'),AT(226,57,44,14),USE(?btnTableSp)
+       BUTTON('Call Async'),AT(17,59,49,14),USE(?btnAsyn)
        BUTTON('C&onnect'),AT(17,78,44,14),USE(?ConnectBtn),DEFAULT
        BUTTON('Read'),AT(93,78,44,14),USE(?btnRead)
        BUTTON('Call Scalar'),AT(161,77,44,14),USE(?btnScalar)
@@ -111,7 +116,7 @@ retv            byte,auto
   retv = parent.init()
 
   thisWindow.dbName = 'default_test'
-  thisWindow.serverName = 'dennishyperv\dev'
+  thisWindow.serverName = 'DENNISHYPERV\DEV'
 
   self.open(window)
 
@@ -162,6 +167,8 @@ retv    byte,auto
     self.readMulti()
   of ?btnTableSp
     self.insertTvp()
+  of ?btnAsyn
+    self.callAsync()
   end ! case
 
   return level:benign
@@ -378,9 +385,10 @@ rows          long,auto
 ! driver will still write the information back but no one know where it will
 ! go.  
 ! the arrays need to reamina in scope.  
-! the arrays are declared here so they can be created wit hthe input value.
+! the arrays are declared here so they can be created with the input value.
+!
 ! clarion really needs dynamic arrays and a pointer type but those are 
-! never goinf to happen.  
+! never going to happen.  
 ! --------------------------------------------------------------------------    
 DemoQuery.execTableSp procedure(string spName, *ParametersClass param, long numberRows) !,sqlReturn,virtual
 
@@ -478,3 +486,14 @@ retv   sqlReturn
   retv = parent.fillResult(cols, q)
 
   return  retv
+
+thisWindow.callAsync    procedure()
+
+addr string(50)
+
+  code
+
+  addr = address(self.msConn)
+  start(callAsyncSp, 0, addr)
+
+  return

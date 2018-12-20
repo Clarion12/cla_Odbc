@@ -1,0 +1,15 @@
+[SYNCHRONISER]
+[DICTIONARY]
+
+[FILES]
+LabelDemo FILE,DRIVER('MSSQL'),OWNER('dennishyperv\dev,default_test,'),NAME('dbo.LabelDemo'),BINDABLE,THREAD
+!!>USAGE(File)
+Record                   RECORD
+SysId LONG
+!!>VALID(NONZERO),PROMPT(?),HEADER(?)
+Label STRING(60)
+!!>VALID(NONZERO),PROMPT(?),HEADER(?)
+Amount REAL
+!!>VALID(NONZERO),PROMPT(?),HEADER(?)
+                         END
+                       END

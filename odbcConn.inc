@@ -10,7 +10,12 @@ _ODBCConnectionPresent_   EQUATE(1)
   include('odbcConnStrCl.inc'),once
   include('OdbcHandleCl.inc'),once
                        
-
+  ITEMIZE(0),PRE(Connection)
+Opened equate
+CallerOpened  equate
+failed equate
+  end
+  
 ODBCConnectionClType class,type,module('odbcConn.clw'),link('odbcConn.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 ! ODBC handles 
 hDbc                   &OdbcHandleClType,private ! db connection handle
@@ -23,6 +28,7 @@ connStr                &baseConnStrClType,private ! instance to hold the connect
 gethDbc                procedure(),SQLHDBC
 gethStmt               procedure(),SQLHStmt
 gethEnv                procedure(),SQLHEnv
+isConnected            procedure(),bool
 ! set up and clean up
 init                   procedure(),sqlReturn
 init                   procedure(baseConnStrClType  connString),sqlReturn,proc

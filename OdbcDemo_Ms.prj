@@ -9,5 +9,7 @@
 #pragma define(_svDllMode_=>0)
 #pragma define(_svLinkMode_=>1)
 #compile "OdbcDemo_Ms.clw"
+#compile "callAsync.clw"
 #pragma link("odbc_13.lib")
+#pragma link("odbc_32DRm.lib")
 #link "OdbcDemo_Ms.exe"

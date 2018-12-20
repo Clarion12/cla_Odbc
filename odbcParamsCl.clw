@@ -214,6 +214,19 @@ ParametersClass.clearQ procedure()
 ! end clear
 ! ---------------------------------------------------------------------------------
 
+ParametersClass.HasParameters procedure() !,bool
+
+retv  bool(false)
+
+  code
+
+  if (records(self.paramQ) > 0) 
+    retv = true
+  end
+
+  return retv
+! end HasParameters --------------------------------------------------------------
+
 ! ---------------------------------------------------------------------------------
 ! add a table parameter to the call
 ! number of rows is the number of rows in the arrays used as the source

@@ -44,6 +44,12 @@ SQL_NULL_HANDLE  equate(0)
 
 SQL_NTS          equate(-3)
 
+! 3.5 and better and obviously get only
+SQL_ATTR_CONNECTION_DEAD equate(1209)
+SQL_CD_TRUE              equate(1)  ! Connection is closed/dead */
+SQL_CD_FALSE             equate(0)  ! Connection is open/available */
+
+
 Sql_Success      equate(0)
 Sql_Success_With_Info equate(1)
 Sql_Error        equate(-1)
@@ -116,6 +122,15 @@ SQL_SCROLLABLE    equate(1)
 SQL_IS_INTEGER  equate(-6)
 SQL_IS_POINTER  equate(-4)
 
+SQL_ATTR_ASYNC_ENABLE        equate(4)
+SQL_ASYNC_ENABLE_ON          equate(1)
+SQL_ASYNC_ENABLE_OFF         equate(0)
+SQL_ATTR_ASYNC_STMT_EVENT    equate(29)
+
+SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE EQUATE(117)
+SQL_ASYNC_DBC_ENABLE_ON      EQUATE(1)
+   
+RETCODE    equate(short)
 
 eSizeReal  equate(8)
 eSizeLong  equate(4)
