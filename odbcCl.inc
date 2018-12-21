@@ -28,6 +28,7 @@ setSqlCommand    procedure(*IdynStr s),sqlReturn,protected
 setSqlCommand    procedure(string s),sqlReturn,protected
 !
 nextResultSet    procedure(),bool
+fetch            procedure(),sqlReturn,virtual
 fetch            procedure(*queue q),sqlReturn,protected,virtual
 fillResult       procedure(*columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 getError         procedure(),private
@@ -38,6 +39,7 @@ execQuery       procedure(*IDynStr sqlCode),sqlReturn,virtual
 execQuery       procedure(*IDynStr sqlCode, *columnsClass cols, *queue q),sqlReturn,virtual
 execQuery       procedure(*sqlStrClType sqlCode, *columnsClass cols, *queue q),sqlReturn,virtual
 execQuery       procedure(*IDynStr sqlCode, *columnsClass cols, *ParametersClass params, *queue q),sqlReturn,virtual
+execQueryOut    procedure(*IDynStr sqlCode, *ParametersClass params),sqlReturn,virtual
 ! private query 
 execQuery       procedure(),sqlReturn,private
 execQuery       procedure(*ParametersClass params),sqlReturn,private

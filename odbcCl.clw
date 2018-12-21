@@ -173,6 +173,25 @@ res  sqlReturn
 
 ! ------------------------------------------------------------------------------
 ! fetch
+! ------------------------------------------------------------------------------
+odbcClType.fetch procedure() !sqlReturn,virtual
+
+retv   sqlReturn
+
+  code 
+  
+  retv = SQLFetch(self.conn.gethStmt())
+  
+  if (retv = sql_success_with_info) 
+    retv = sql_success
+  end 
+   
+  return retv
+! end fetch
+! -----------------------------------------------------------------------------
+
+! ------------------------------------------------------------------------------
+! fetch
 ! reads the result set, one row at a time and places the data into the queue fields.
 ! Queue fields are already bound to the columns so all that is needed here is an add(q)
 !
@@ -378,6 +397,24 @@ retv    sqlReturn,auto
   return retv 
 ! end execQuery
 ! ----------------------------------------------------------------------
+
+odbcClType.execQueryOut procedure(*IDynStr sqlCode, *ParametersClass params) !,sqlReturn,virtual
+
+retv    sqlReturn,auto
+
+  code 
+  
+  if (self.setSqlCommand(sqlCode) <> sql_Success) 
+    return sql_error
+  end 
+  retv = params.bindParameters(self.conn.gethStmt())
+
+  retv = self.execQuery() 
+  
+  return retv 
+! end execQuery
+! ----------------------------------------------------------------------
+
 
 ! ----------------------------------------------------------------------
 ! execute a query that does not return a result set
