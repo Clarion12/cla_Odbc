@@ -5,7 +5,7 @@
 
   map 
     module('odbc32')
-      SQLBindCol(SQLHSTMT StatementHandle, SQLUSMALLINT ColumnNumber, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, *SQLLEN StrLen_or_Ind),sqlReturn,pascal
+      SQLBindCol(SQLHSTMT StatementHandle, SQLUSMALLINT ColumnNumber, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, *SQLLEN  StrLen_or_Ind),sqlReturn,pascal
     end
   end
 ! ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ columnsClass.kill procedure()
 ! ---------------------------------------------------------------------------
 !  default destructor, calls the kill function for the clean up
 ! ---------------------------------------------------------------------------
-columnsClass.destruct procedure()
+columnsClass.destruct procedure() ! virtual
 
   code 
 
@@ -83,7 +83,21 @@ columnsClass.destruct procedure()
 ! ------------------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------
-! gets the string stored in the dyn str, 
+! free the queue and the dyn str
+! ------------------------------------------------------------------------------
+columnsClass.clearQ procedure()
+
+  code 
+  
+  free(self.colQ)
+  self.fieldList.kill()
+    
+  return
+! end clearQ
+! ------------------------------------------------------------------------------
+
+! ------------------------------------------------------------------------------
+! gets the string or the list of column labels stored in the dyn str, 
 ! returns a cstring 
 ! ------------------------------------------------------------------------------
 columnsClass.getFields procedure() !,*cstring,virtual
@@ -102,16 +116,15 @@ columnsClass.getFields procedure() !,*cstring,virtual
 ! hStmt   = handle to the ODBC statement
 ! colId = ord value of the parmaeter, 1, 2, 3 ... the ordinal position
 ! colType = the C data type of the column 
-! colValue = pointer to the queue field 
+! colValue = pointer to the buffer field 
 ! colSize = the size of the buffer or the queue field 
 ! colInd = pointer to a buffer for the size of the parameter. not used and null in this example 
 ! -----------------------------------------------------------------------------    
 columnsClass.bindColumns procedure(long hStmt) ! sqlReturn
 
-retv      sqlReturn
-colInd    &long
-x         long,auto
-startRow  long,auto
+retv      sqlReturn(SQL_SUCCESS)  ! set ot success at the start, some calls will have an empty queue
+colInd    &long                  ! just a place holder not used
+x         long,auto         
 
   code 
   
@@ -134,39 +147,21 @@ startRow  long,auto
 ! ------------------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------
-! free the queue and the dyn str
-! ------------------------------------------------------------------------------
-columnsClass.clearQ procedure()
-
-  code 
-  
-  free(self.colQ)
-  self.fieldList.kill()
-    
-  return
-! end clearQ
-! ------------------------------------------------------------------------------
-
-! ------------------------------------------------------------------------------
 ! the various addColumn functions are called by the using code and are used for the
 ! specific data types.  each calls the AddColumn/3 function to actually 
 ! add a columns
 ! ------------------------------------------------------------------------------
-columnsClass.AddColumn procedure(*long colPtr) !,sqlReturn,proc
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(*long colPtr) 
 
   code 
   
-  self.addColumn(SQL_C_SLONG, address(colPtr), 4)  
+  self.addColumn(SQL_C_SLONG, address(colPtr), 4)
    
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
  
-columnsClass.AddColumn procedure(string colLabel, *long colPtr) !,sqlReturn,proc
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(string colLabel, *long colPtr) 
 
   code 
   
@@ -174,94 +169,81 @@ retv   sqlReturn(sql_Success)
   
   self.addField(colLabel) 
      
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
  
-columnsClass.AddColumn procedure(*string colPtr) !,sqlReturn,proc     
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(*string colPtr)
 
   code 
 
   self.addColumn(SQL_C_CHAr, address(colPtr), len(colPtr))  
    
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(string colLabel, *string colPtr) !,sqlReturn,proc     
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(string colLabel, *string colPtr)
 
   code 
 
   self.addColumn(SQL_C_CHAr, address(colPtr), len(colPtr))  
   self.addField(colLabel) 
    
-  return retv
+  return 
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(*real colPtr) !,sqlReturn,proc
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(*real colPtr) 
 
   code 
   
   self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr))
      
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(string colLabel, *real colPtr) !,sqlReturn,proc
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(string colLabel, *real colPtr) 
 
   code 
   
   self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr))
   self.addField(colLabel) 
      
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(*TIMESTAMP_STRUCT colPtr) !,sqlReturn,proc
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(*TIMESTAMP_STRUCT colPtr)
 
   code 
   
   self.addColumn(SQL_C_TYPE_TIMESTAMP, address(colPtr), size(TIMESTAMP_STRUCT))
    
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(string colLabel, *TIMESTAMP_STRUCT colPtr) !,sqlReturn,proc
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(string colLabel, *TIMESTAMP_STRUCT colPtr)
 
   code 
   
   self.addColumn(SQL_C_TYPE_TIMESTAMP, address(colPtr), size(TIMESTAMP_STRUCT))
   self.addField(colLabel) 
    
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
   
 ! ------------------------------------------------------------------------------
-! add a column to the objects queue. 
-! the colums will be bound when the execute function is called.
-! typically called by the various addColumn functions but can be called directly
+! add a column to the queue.  each column added here will be bound to the 
+! statment handle.  The colums are bound when the execute function is called.
+! this is typically called by the various addColumn/1 functions but can be called directly
+! in a derived instance.
+! the columns are boud in the sequence they are added.
 ! ------------------------------------------------------------------------------  
-
-columnsClass.AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength)
-
-retv   sqlReturn(sql_Success)
+columnsClass.AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength) 
 
   code 
   
@@ -273,10 +255,13 @@ retv   sqlReturn(sql_Success)
 
   add(self.Colq)
    
-  return retv
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
+! ---------------------------------------------------------
+! adds a label to the list of columns not implemented
+! ---------------------------------------------------------
 columnsClass.addField procedure(string colLabel) 
 
   code 

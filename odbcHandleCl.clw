@@ -42,7 +42,7 @@ err ODBCErrorClType
 
 retv   sqlReturn,auto
 
-SQL_OV_ODBC3_80 long(380)
+verId  ulong(SQL_OV_ODBC3_80)
 
   code
   
@@ -51,6 +51,11 @@ SQL_OV_ODBC3_80 long(380)
   
   if (retv <> Sql_Success) 
     err.getError(pType, self.handle)
+  else 
+    ! set the version attribute if this is an SQL_HANDLE_ENV  
+    if (hType = SQL_HANDLE_ENV) 
+      retv  = SQLSetEnvAttr(self.handle, SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
+    end 
   end
 
   return retv
@@ -83,6 +88,26 @@ OdbcHandleClType.getHandle procedure() !,SQLHANDLE
 ! end getHandle 
 ! ----------------------------------------------------------------------------  
 
+! ------------------------------------------------------------
+! unbinds the columns and the parameters for the statement 
+! handle.  the statment handle at this stime could be reused 
+! if needed/wanted
+! ------------------------------------------------------------
+OdbcStmtHandleClType.freeBindings  procedure() !,sqlReturn,proc,virtual
+
+retv   sqlReturn,auto
+
+  code 
+   
+  retv = SQLFreeStmt(self.handle, SQL_UNBIND)
+  retv = SQLFreeStmt(self.handle, SQL_RESET_PARAMS)
+
+  return retv
+! ----------------------------------------------------------------------------
+
+! ------------------------------------------------------------
+! frees the statement handle 
+! ------------------------------------------------------------
 OdbcStmtHandleClType.freeHandle procedure() !,sqlReturn,proc,virtual
 
 retv   sqlReturn,auto
@@ -94,10 +119,10 @@ retv   sqlReturn,auto
   end
   
   SQLFreeStmt(self.handle, SQL_CLOSE)
-  SQLFreeStmt(self.handle, SQL_UNBIND)
-  SQLFreeStmt(self.handle, SQL_RESET_PARAMS)
+  self.freeBindings()
   
   retv = parent.freeHandle() 
 
   return retv  
+! end freehhandle ----------------------------------------------  
   

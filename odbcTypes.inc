@@ -76,7 +76,9 @@ SQLHWND          equate(SQLHANDLE)
 SQLINTEGER       equate(long)
 SQLPOINTER       equate(long)
 
+SQL_OV_ODBC3_80  equate(380)
 SQL_ATTR_ODBC_VERSION equate(200)
+
 SQL_OV_ODBC3     equate(3)
 
 SQL_C_CHAr       equate(1)
@@ -105,11 +107,18 @@ SQL_PARAM_INPUT        equate(1)
 SQL_PARAM_OUTPUT       equate(4)
 SQL_PARAM_INPUT_OUTPUT equate(2)
 
+SQL_DRIVER_VER         equate(7)
+SQL_DM_VER             equate(171)
+
 SQL_BIND_TYPE           equate(5)
 SQL_ATTR_ROW_BIND_TYPE  equate(SQL_BIND_TYPE)
 SQL_ATTR_ROW_ARRAY_SIZE equate(27)
 SQL_ATTR_ROW_STATUS_PTR equate(25)
 SQL_ATTR_ROWS_FETCHED_PTR equate(26)
+
+SQL_ATTR_TRACE    equate(104)
+SQL_OPT_TRACE_OFF equate(0)
+SQL_OPT_TRACE_ON  equate(1)
 
 SQL_DIRECTION     equate(long)
 SQL_FETCH_NEXT    equate(1)
@@ -122,10 +131,21 @@ SQL_SCROLLABLE    equate(1)
 SQL_IS_INTEGER  equate(-6)
 SQL_IS_POINTER  equate(-4)
 
+SQL_ATTR_AUTOCOMMIT  equate(102)
+SQL_AUTOCOMMIT_ON    equate(1)
+SQL_AUTOCOMMIT_OFF   equate(0)
+
 SQL_ATTR_ASYNC_ENABLE        equate(4)
 SQL_ASYNC_ENABLE_ON          equate(1)
 SQL_ASYNC_ENABLE_OFF         equate(0)
 SQL_ATTR_ASYNC_STMT_EVENT    equate(29)
+
+SQL_ATTR_ASYNC_DBC_EVENT     equate(119)
+
+SQL_ASYNC_NOTIFICATION       equate(10025)
+
+SQL_ASYNC_NOTIFICATION_NOT_CAPABLE equate(0) 
+SQL_ASYNC_NOTIFICATION_CAPABLE     equate(1)
 
 SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE EQUATE(117)
 SQL_ASYNC_DBC_ENABLE_ON      EQUATE(1)

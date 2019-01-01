@@ -89,19 +89,28 @@ retv   sqlReturn,auto
   return retv 
 ! end getDatabaseError
 ! ----------------------------------------------------------------------------  
-     
+
+! ----------------------------------------------------------------------------  
+! reads the error and information messages from the list using the 
+! SQLGetDiagRec function.  each message is added to the queue for display, if needed
+! this function clears the queue of messages and then finds the number 
+! of messages for the handle type input.  if one or mor then the code loops 
+! over the list and places the wide string output values into the queue
+! after they are converted to ANSI strings
+! ----------------------------------------------------------------------------       
 OdbcErrorClType.getError procedure(SQLSMALLINT HandleType, SQLHANDLE Handle)  
 
 retv      sqlReturn,auto
 errCount  long,auto
 count     long,auto
 
-claStateMsg  cstring(12)
-claErrMsg    cstring(2001)
-
+! function inputs
+claStateMsg  cstring(12)    ! sql state is a static size
+claErrMsg    cstring(2001)  ! this is large enough
+! wide string instances 
 stateMsg  CWideStr
 errMsg    CWideStr
-
+! used to convert a wide string to a ansi string
 outState  CStr
 outErr    CStr
 
@@ -113,14 +122,16 @@ tempholder bool
   self.getDiagRecCount(handleType, handle)
 
   loop count = 1 to self.errorCount
-    
+    ! allocate the inpusts
     claStateMsg = all(' ')
     tempholder = statemsg.Init(claStateMsg)
-
     claErrMsg = all(' ')
     tempholder = errMsg.Init(claErrMsg)
 
+    ! call the function with the errMsg parameter set to null and the call will output the number of bytes 
+    ! for the length of the message, allocate and call a second time
     retv = SQLGetDiagRec(handleType, handle, count, stateMsg.getWideStr(), self.errorMsgQ.NativeErrorPtr, errMsg.getWideStr(), 2000, self.errorMsgQ.textLengthPtr)
+    ! if call worked thne from wide string to ansi and place i nthe queue  
     if (retv = sql_Success) or (retv = sql_success_with_info)
       tempholder = outState.Init(stateMsg)
       self.errorMsgQ.sqlState = outState.getCStr()
@@ -140,6 +151,49 @@ tempholder bool
 ! end getError
 ! ----------------------------------------------------------------------
   
+! ----------------------------------------------------------------------  
+! calls the SQLGetDiagField function to get the number of messages 
+! they maybe error messages or just information messages
+! called internally by the getError function
+! this call can return other information but they are not currently used
+!
+! the call can return the number of rows affected by an insert, update or delete action
+! and some other types of information
+! ----------------------------------------------------------------------    
+OdbcErrorClType.getDiagRecCount procedure(SQLSMALLINT HandleType, SQLHANDLE Handle) !,long,private  
+
+retv            sqlReturn,auto
+StringLengthPtr short,auto
+ 
+  code 
+
+  ! just find the number of errors in the list
+  retv = SQLGetDiagField(HandleType, Handle, 0, SQL_DIAG_NUMBER, self.errorCount, 0, StringLengthPtr)
+  
+  case retv 
+  !of SQL_SUCCESS  
+    ! valid result, nothing to do
+  !of SQL_SUCCESS_WITH_INFO 
+    ! not currently using this value
+  of SQL_INVALID_HANDLE
+    ! this is a programing error not a run time error
+    ! just show a message for testing
+    message('Call to getDiagField with an invalid handle.', 'Invalid Handle', icon:exclamation)
+    self.freeErrorMsgQ()
+  of SQL_ERROR 
+    ! this is a programing error not a run time error
+    message('Call to getDiagField returned SQL_ERROR, verify the handle type used is the correct type.', 'SQL error', icon:exclamation)
+    self.freeErrorMsgQ()
+  end 
+    
+  return retv
+! end getDiagRecCount
+! ----------------------------------------------------------------------  
+
+! ----------------------------------------------------------------------
+! displays an erro on the screen using a simple message call
+! shows all the errors and information messages from the call for the handle type
+! ----------------------------------------------------------------------
 OdbcErrorClType.showError procedure()
 
 count     long,auto
@@ -148,7 +202,7 @@ count     long,auto
 
   loop count = 1 to self.errorCount
     get(self.errorMsgQ, count)
-    message('ODBC Error State  ->' & self.errorMsgQ.sqlState & '|Error Message  ->' & clip(self.errorMsgQ.MessageText), 'Database Error', icon:exclamation)
+    message('ODBC Error State  -> ' & self.errorMsgQ.sqlState & '|System Error Code -> ' & self.errorMsgQ.NativeErrorPtr &  '|Error Message  -> ' & clip(self.errorMsgQ.MessageText), 'Database Error', icon:exclamation)
   end  
   
   return   
@@ -165,33 +219,6 @@ OdbcErrorClType.freeErrorMsgQ procedure() !,private
   
   return   
 ! end freeErrorMsgQ
-! ----------------------------------------------------------------------  
-  
-OdbcErrorClType.getDiagRecCount procedure(SQLSMALLINT HandleType, SQLHANDLE Handle) !,long,private  
-
-retv            sqlReturn,auto
-StringLengthPtr short,auto
- 
-  code 
-
-  retv = SQLGetDiagField(HandleType, Handle, 0, SQL_DIAG_NUMBER, self.errorCount, 0, StringLengthPtr)
-  
-  case retv 
-  !of SQL_SUCCESS  
-    ! valid result, nothing to do
-  !of SQL_SUCCESS_WITH_INFO 
-    ! not currently using this value, if you need to read strings from the record
-    ! use this to verify the buffer lengths 
-  of SQL_INVALID_HANDLE
-    message('Call to getDiagField with an incorrect handle.', 'Invalid Handle', icon:exclamation)
-    self.freeErrorMsgQ()
-  of SQL_ERROR 
-    message('Call to getDiagField returned SQL_ERROR, verify the handle type.', 'SQL error', icon:exclamation)
-    self.freeErrorMsgQ()
-  end 
-    
-  return retv
-! end getDiagRecCount
 ! ----------------------------------------------------------------------  
   
 OdbcErrorClType.makeObjects procedure() !,sqlReturn,private

@@ -12,7 +12,7 @@
       SQLDisconnect(SQLHDBC ConnectionHandle),sqlReturn,pascal   
       SQLGetInfo(SQLHDBC hDbc, long attrib, *cstring valuePtr, long buffLength, *long strLenPtr),long,pascal,raw
       SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,  SQLPOINTER Value, SQLINTEGER StringLength),sqlReturn,pascal
-      SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER attribute, SQLPOINTER value, SQLINTEGER id),long,pascal,Name('SQLSetStmtAttrW')
+      SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER attribute, SQLPOINTER valuePtr, SQLINTEGER id),long,pascal,Name('SQLSetStmtAttrW')
       SQLSetConnectAttr(SQLHDBC Handle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength),sqlReturn,pascal,name('SQLSetConnectAttrW')
       SQLGetConnectAttr(SQLHDBC Handle, SQLINTEGER Attribute, *SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER StringLengthPtr),sqlReturn,pascal,name('SQLGetConnectAttrW')
     end 
@@ -118,17 +118,18 @@ ODBCConnectionClType.gethStmt procedure() !,SQLHStmt
 ! and to true if the connection is dead, so the return value is set to false 
 ! at the start and if the connection is not dead then it is set to true
 ! ---------------------------------------------------------------------------
-ODBCConnectionClType.isConnected procedure() !,bool
+ODBCConnectionClType.isConnected procedure(SQLHDBC dbHandle = 0) !,bool
 
 res      sqlReturn,auto
 retv     bool(false)    ! assume the connection is dead or not active at the start
 status   long,auto  
-dbHandle SQLHDBC,auto
 
   code
 
-  ! get the current connection handle, check for a value.  
-  dbHandle = self.gethDbc()
+   if (dbHandle <= 0) 
+    ! get the current connection handle, check for a value.  
+    dbHandle = self.gethDbc()
+  end  
   ! if > 0 then it has been connected
   if (dbHandle > 0) 
     ! get the staus, if the res is not good then just assume the connection is not active
@@ -151,8 +152,7 @@ retv            sqlReturn
 
   code
 
-  retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER);
-  
+  retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER)
   if (retv <> Sql_Success) 
     err.getError(SQL_HANDLE_ENV, self.gethEnv())
   end
@@ -183,11 +183,11 @@ outConnStr cstring(501)
 wideStr    Cwidestr
 outWideStr Cwidestr
 
-outs cstr
+!outs cstr
 
   code 
   
-  ! if there is already a handle (connect was called twice) just retunr success
+  ! if there is already a handle (connect was called twice) just return success
   ! consider changing to throw na error, if called twice it is a programming error
   if (self.hdbc.getHandle() <= 0)
     retv = self.hDbc.allocateHandle(SQL_HANDLE_DBC, self.hEnv.getHandle())
@@ -197,7 +197,6 @@ outs cstr
 
   if (retv = sql_Success) or (retv = sql_success_with_info)
     ! make the connection string a wide string for the ODBC 
-    stop(self.connStr.ConnectionString())
     if (wideStr.init(self.connStr.ConnectionString()) = false) 
       return sql_Error
     end
@@ -210,19 +209,20 @@ outs cstr
     retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), size(outConnStr), outLength, SQL_DRIVER_NOPROMPT)
 
     ! ---------------------------------------------------
-    ! demo code, show the additional error messages that are avaliable from the driver
+    ! demo code, show some of the additional error messages 
+    ! that are avaliable from the driver
     ! ---------------------------------------------------
     !if (retv <> Sql_Success)
-    !  self.getDatabaseError()
+     ! self.getDatabaseError()
     !end  
+
     ! take the output string and convent it to a cla cstring 
     !if (outs.Init(outWideStr) = true)
       !stop(outs.getCStr())
     !end
   end   
 
-  ! check for with info, always returns with info about the connection
-  ! because the connection string is modified 
+  ! check for with info, this call always returns with info 
   if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
     self.getDatabaseError()
   else 
@@ -309,3 +309,13 @@ err    ODBCErrorClType
   return 
 ! end getError 
 ! ----------------------------------------------------------------------
+
+ODBCConnectionClType.asyncOn procedure()
+
+retv   sqlReturn,auto
+
+  code 
+
+  retv = SQLSetConnectAttr(self.hDbc.getHandle(), SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE, SQL_ASYNC_DBC_ENABLE_ON, SQL_IS_INTEGER)
+
+  return retv

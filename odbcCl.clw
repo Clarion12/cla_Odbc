@@ -62,20 +62,21 @@ odbcClType.kill procedure() !,virtual
     self.sqlStr &= null
   end  
   
-  self.conn &= null
-  
   return
 ! end kill
 ! ----------------------------------------------------------------------
  
-odbcClType.destruct procedure()  
+! ----------------------------------------------------------------------
+! default destructor, calls the kill method
+! ---------------------------------------------------------------------- 
+odbcClType.destruct procedure()  !virtual
 
   code 
 
   self.kill()
   
   return
-! end destruct
+! end destructor
 ! ----------------------------------------------------------------------
 
 ! ----------------------------------------------------------------------
@@ -103,6 +104,7 @@ retv sqlReturn
 
 ! ----------------------------------------------------------------------
 ! virtual place holder
+! use this function to format the fields or columns read prior to the display
 ! ----------------------------------------------------------------------
 odbcClType.formatRow procedure() !,virtual  
 
@@ -172,11 +174,30 @@ res  sqlReturn
 ! ------------------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------
-! fetch
+! reads the next result set by calling the fetch function
+! ------------------------------------------------------------------------------
+odbcClType.readnextResult procedure(*queue q) !,sqlReturn,virtual
+
+retv   sqlReturn,auto
+
+  code
+
+  retv = self.fetch(q)
+
+  if (retv = sql_success_with_info) 
+    retv = sql_success
+  end 
+
+  return retv
+! end  readnextResult
+! ------------------------------------------------------------------------------
+
+! ------------------------------------------------------------------------------
+! fetch with out a result set.  
 ! ------------------------------------------------------------------------------
 odbcClType.fetch procedure() !sqlReturn,virtual
 
-retv   sqlReturn
+retv   sqlReturn,auto
 
   code 
   
@@ -280,23 +301,29 @@ err    ODBCErrorClType
   return
 ! end getError  
 ! -----------------------------------------------------------------------------
-    
-odbcClType.endAsync procedure() !sqlreturn
 
-retv     sqlReturn
-outCode  retcode
+! ----------------------------------------------------------------------
+! execute a query that does not return a result set and does not use any 
+! parameters
+! ----------------------------------------------------------------------
+odbcClType.execQuery procedure(*IDynStr sqlCode) !,sqlReturn,virtual
 
-  code
+res     long,auto   ! used t oavoid function call warnings
+retv    sqlReturn,auto
+wideStr CWideStr
 
-  retv = SQLCompleteAsync(SQL_HANDLE_STMT, self.conn.getHStmt(), outCode)
+  code 
+  
+  res = wideStr.Init(sqlCode.Cstr())
+  retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
 
   return retv
-! -----------------------------------------------------------------------------
+! --------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------
 ! execQuery
 ! execute a query that returns a result set.  
-! get a connection, prep the statement, execute the statement
+! prep the statement, execute the statement
 ! then fill the queue or buffers and close the connection when done
 !
 ! this method does not accept the parameters class instance so use this one for queries that 
@@ -323,57 +350,10 @@ retv    sqlReturn,auto
 ! end execQuery
 ! ----------------------------------------------------------------------
 
-! ------------------------------------------------------------------------------
-! execQuery, same as the one above with a different type for the sql code input
-! execute a query that returns a result set.  
-! get a connection, prep the statement, execute the statement
-! then fill the queue or buffers and close the connection when done
-!
-! this method does not accept the parameters class instance so use this one for queries that 
-! do not have parameters.
-! ------------------------------------------------------------------------------    
-odbcClType.execQuery procedure(*sqlStrClType sqlCode, *columnsClass cols, *queue q) !,sqlReturn,virtual
-
-retv    sqlReturn,auto
-
-  code 
-  
-  if (self.setupQuery(sqlCode.sqlStr, cols) <> sql_Success)
-    return sql_error
-  end 
-  
-   
-  retv = self.execQuery() 
-
-  ! fill the queue
-  if (retv = sql_Success)
-    retv = self.fillResult(cols, q)
-  end   
- 
-  return retv 
-! end execQuery
-! ----------------------------------------------------------------------
-
-! ----------------------------------------------------------------------
-! execute a query that does not return a result set and does not use any 
-! parameters
-! ----------------------------------------------------------------------
-odbcClType.execQuery procedure(*IDynStr sqlCode) !,sqlReturn,virtual
-
-res     long,auto   ! used t oavoid function call warnings
-retv    sqlReturn,auto
-wideStr CWideStr
-
-  code 
-  
-  res = wideStr.Init(sqlCode.Cstr())
-  retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
-
-  return retv
-! --------------------------------------------------------------------
-
 ! ----------------------------------------------------------------------
 ! execute a query that returns a result set and expects parameters
+! do the set up and bind the parameters and execute, then fill the 
+! result set
 ! ----------------------------------------------------------------------
 odbcClType.execQuery procedure(*IDynStr sqlCode, *columnsClass cols, *ParametersClass params, *queue q) !,sqlReturn,virtual
 
@@ -468,9 +448,11 @@ retv    sqlReturn(sql_Success)
   return retv
 ! -----------------------------------------------------------------------------
 
-! -----------------------------------------------------------------------------
-!  virtual place holder
-! -----------------------------------------------------------------------------
+! ------------------------------------------------------------------
+! call stored procedure with one or more table valued parameters.
+! this is a virtual place holder and needs to be overloaded in function
+! or in some code that can hold the array's until the write completes.
+! ------------------------------------------------------------------
 odbcClType.execTableSp procedure(string spName, *ParametersClass params, long numberRows) !,sqlReturn,virtual
 
   code
@@ -483,16 +465,19 @@ odbcClType.execTableSp procedure(string spName, *ParametersClass params, long nu
 ! -----------------------------------------------------------------------------
 ! execute a stored procedure, 
 ! function calls exec direct with the command text
+! called internally by the other stored procedure calls
 ! -----------------------------------------------------------------------------
 odbcClType.execSp procedure() !private,sqlReturn
 
 retv     sqlReturn,auto
 wideStr  CWideStr
-retCount long  ! used to avoid function warning
 
   code
 
-  retCount = wideStr.Init(self.sqlStr.cstr())
+  if (wideStr.Init(self.sqlStr.cstr()) <= 0)
+    return sql_error
+  end  
+
   retv = SQLExecDirect(self.conn.gethStmt(), wideStr.GetWideStr(), SQL_NTS)
   
   if (retv <> Sql_Success) and (retv <> Sql_Success_with_info)
@@ -655,9 +640,9 @@ params   &ParametersClass
   
 ! ----------------------------------------------------------------------
 ! sets up a call, just formats the string with the {call spname(?, ...)}
-! this one adds a pllace holder for each parameter
+! adds a place holder for each parameter
 ! ----------------------------------------------------------------------  
-odbcClType.setupSpCall procedure(string spName, *ParametersClass params) ! sqlReturn,private
+odbcClType.setupSpCall procedure(string spName, *ParametersClass params) ! sqlReturn
 
 retv    sqlReturn 
 
@@ -667,7 +652,7 @@ retv    sqlReturn
     return sql_error
   end 
 
-  if (params &= null) 
+  if ((params &= null) or (params.HasParameters() = false))
     self.sqlStr.formatSpCall(spName)
   else   
     self.sqlStr.formatSpCall(spName, params)

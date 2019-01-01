@@ -18,6 +18,7 @@ eDefaultLength    equate(128)
 ! ---------------------------------------------------------------------------
 baseConnStrClType  class,type,module('odbcConnStrCl.clw'),link('odbcConnStrCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 connStr              &IDynStr,private
+doNotBuild           bool,private
 ! connection string fields, access is through the interface 
 srvName              cstring(eDefaultLength),private
 dbName               cstring(eDefaultLength),private
@@ -46,6 +47,7 @@ kill                 procedure(),virtual
                
 MSConnStrClType  class(baseConnStrClType),type,module('odbcConnStrCl.clw'),link('odbcConnStrCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 init               procedure(string srvName, string dbName),virtual
+Init               procedure(string fullConnStr),virtual
 setTrustedConn     procedure(bool onOff)
 setUseMars         procedure(bool onOff)
 ConnectionString   procedure(),*cstring,virtual

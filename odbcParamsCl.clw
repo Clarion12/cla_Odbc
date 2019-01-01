@@ -16,7 +16,10 @@
   end
 
 ! ---------------------------------------------------------------------------
-  
+
+! ---------------------------------------------------------------------------
+! default constructor for the parameters
+! ---------------------------------------------------------------------------  
 ParametersClass.construct procedure()
 
   code 
@@ -27,6 +30,9 @@ ParametersClass.construct procedure()
 ! end construct
 ! ----------------------------------------------------------------------------
 
+! ---------------------------------------------------------------------------
+! sets up the object for use allocates a queue and sets a flag
+! ---------------------------------------------------------------------------  
 ParametersClass.Init procedure()
 
 retv     byte,auto 
@@ -47,6 +53,9 @@ retv     byte,auto
 ! end init 
 ! ------------------------------------------------------------------------------------
   
+! ---------------------------------------------------------------------------
+! does the standard clean up when the object goes out of scope 
+! ---------------------------------------------------------------------------    
 ParametersClass.kill procedure()
 
   code
@@ -61,7 +70,10 @@ ParametersClass.kill procedure()
   return 
 ! end kill 
 ! -----------------------------------------------------------------------------
-    
+
+! ---------------------------------------------------------------------------
+! destructor, calls the Kill method
+! ---------------------------------------------------------------------------        
 ParametersClass.destruct procedure()
 
   code 
@@ -72,18 +84,48 @@ ParametersClass.destruct procedure()
 ! destruct 
 ! -----------------------------------------------------------------------------
 
-! ----------------------------------------------------------------------
-! call this function when binding a table valued parameter.
-! Note, the numberRows input must remain in scope while the call is being made.
-! the driver writes data back to this value and if it goes out of scope things 
-! things will go south
-! ----------------------------------------------------------------------
+! ---------------------------------------------------------------------------------
+! free the queue of parameters, this does not remove the bindings, if any
+! ---------------------------------------------------------------------------------
+ParametersClass.clearQ procedure()
+
+  code 
+  
+  if (self.setupFailed = false)
+    free(self.paramQ)
+  end
+
+  return
+! end clear
+! ---------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------
+! Bind a table valued parameter for the statement.  
+! 
+! note the number of rows parameter.  the system writes back to this parameter
+! amd it must remain in scope during the call. 
+!
+! once the table is bound use the two focus functions t obind the table columns
+! 
+! parameters for the ODBC api call 
+! hStmt   = handle to the ODBC statement
+! paramId = ord value of the parmaeter, 1, 2, 3 ... the ordinal position
+! InOutType = type of parmeter in/out/inout
+! value type = the C data type of the parameter, an equate value from the API
+! param type = the sql data type of the parameter, an equate value from the API
+! param size = the size, in bytes of the column for this parameter typicall the same as the paraLength
+! decimal digits = number of decimal of the column 
+! ParamPtr = pointer to the data for the parameter
+! paramLength = the size of the paramPtr buffer
+! colInd = pointer to a buffer for the size of the parameter.   not used and null in this example 
+! -----------------------------------------------------------------------------  
 ParametersClass.bindParameters procedure(SQLHSTMT hStmt, *long numberRows) !,sqlReturn  
 
-retv        sqlReturn   
+retv        sqlReturn(SQL_SUCCESS)   
 count       long,auto
-wideStr     CWideStr
-numberBytes long,auto
+
+wideStr     CWideStr    ! used to convert the ansi string to a wide string
+numberBytes long,auto   ! returned number of bytes
 
   code 
 
@@ -111,6 +153,40 @@ numberBytes long,auto
   return retv
 ! end bindParameters 
 ! ---------------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------------
+! set the focus of the driver to the table, once the focus is set 
+! bind the columns of the table
+! note, this must be called when using a table valued parameter
+! ---------------------------------------------------------------------------------
+ParametersClass.focusTableParameter procedure(SQLHSTMT hStmt, long ordinal)  
+
+retv       sqlReturn
+
+  code
+                               
+  retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, ordinal, SQL_IS_INTEGER)
+
+  return retv
+! end focusTableParameter
+! -------------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------------
+! remove  the focus of the driver from the table, call this after the table columns
+! are bound 
+! note, this must be called when using a table valued parameter
+! ---------------------------------------------------------------------------------
+ParametersClass.unfocusTableParameter procedure(SQLHSTMT hStmt)  
+
+retv       sqlReturn
+
+  code
+
+  retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, 0, SQL_IS_INTEGER)
+
+  return retv
+! end unfocusTableParameter
+! -------------------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------
 ! bindParameters
@@ -165,55 +241,10 @@ count    long,auto
 ! end bindParameters 
 ! ---------------------------------------------------------------------------------
 
-! ---------------------------------------------------------------------------------
-! set the focus of the driver tot the table, once the focus is set 
-! bind the columns of the table
-! note, this must be called when using a table valued parameter
-! ---------------------------------------------------------------------------------
-ParametersClass.focusTableParameter procedure(SQLHSTMT hStmt, long ordinal)  
-
-retv       sqlReturn
-
-  code
-                               
-  retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, ordinal, SQL_IS_INTEGER)
-
-  return retv
-! end focusTableParameter
-! -------------------------------------------------------------------------------
-
-! ---------------------------------------------------------------------------------
-! remove  the focus of the driver from the table, call this after the table columns
-! are bound 
-! note, this must be called when using a table valued parameter
-! ---------------------------------------------------------------------------------
-ParametersClass.unfocusTableParameter procedure(SQLHSTMT hStmt)  
-
-retv       sqlReturn
-
-  code
-
-  retv = SQLSetStmtAttr(hStmt, SQL_SOPT_SS_PARAM_FOCUS, 0, SQL_IS_INTEGER)
-
-  return retv
-! end unfocusTableParameter
-! -------------------------------------------------------------------------------
-
-! ---------------------------------------------------------------------------------
-! free the queue 
-! ---------------------------------------------------------------------------------
-ParametersClass.clearQ procedure()
-
-  code 
-  
-  if (self.setupFailed = false)
-    free(self.paramQ)
-  end
-
-  return
-! end clear
-! ---------------------------------------------------------------------------------
-
+! ----------------------------------------------------------
+! function the check the rows in the queue
+! returns true if there is at least one row and false is no  rows
+! ----------------------------------------------------------
 ParametersClass.HasParameters procedure() !,bool
 
 retv  bool(false)
@@ -232,7 +263,7 @@ retv  bool(false)
 ! number of rows is the number of rows in the arrays used as the source
 ! table name is the name of the table type on the server
 ! 
-! if the type name is not found the read will fail
+! if the type name is not found the call to the backend  will fail
 ! ---------------------------------------------------------------------------------
 ParametersClass.AddTableParameter procedure(long numberRows, *cstring tableName)  !,sqlReturn,proc
 
@@ -245,12 +276,12 @@ retv sqlReturn
   end   
   
   self.paramQ.paramId = records(self.ParamQ) + 1
-  self.paramQ.InOutType = SQL_PARAM_INPUT  ! tablesare always inputs
+  self.paramQ.InOutType = SQL_PARAM_INPUT  ! tables parameters are always inputs, cannot be out type parameters
   self.paramQ.valueType = SQL_C_DEFAULT    ! default for the table type
   self.paramQ.paramType = SQL_SS_TABLE     ! type
   self.paramQ.paraSize = numberRows        
   self.paramQ.DecimalDigits = 0            ! always zero for the table type
-  self.paramQ.tableName = tableName   
+  self.paramQ.tableName = tableName        ! thisis the type name on the server
   self.paramQ.paramLength = SQL_NTS         
   self.paramQ.ParamPtr = 0                 ! always zero or a null pointer
 
@@ -422,10 +453,13 @@ retv   sqlReturn,auto
 ! end AddInParameter
 ! --------------------------------------------------------------------------------  
 
-! --------------------------------------------------------------------------------  
-! add array parameters, these are always inputs
-! this will be used by table valued input parameters
-! --------------------------------------------------------------------------------  
+! ----------------------------------------------------------
+! add the different types of arrays for the table valued parameters
+! these pararmeters are always inputs, no output parameters allowed
+!
+! the array parameter is the address of the first element in the array
+! so call like this AddLongArray(address(someArray[1]))
+! ----------------------------------------------------------
 ParametersClass.AddLongArray procedure(long array) !,sqlReturn,proc
 
 retv sqlReturn
@@ -439,23 +473,24 @@ retv sqlReturn
 ! end AddlongArray
 ! ------------------------------------------------------------------------------------
 
-! --------------------------------------------------------------------------------  
-! add array parameters, these are always inputs
-! these parameters will be used by table valued input parameters
-! --------------------------------------------------------------------------------  
 ParametersClass.AddRealArray procedure(long array) !,sqlReturn,proc
 
 retv sqlReturn
 
   code
   
-  ! add the array, this will always be an input\
+  ! add the array, this will always be an input
   retv = self.addParameter(SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, eSizeReal, 0, array, eSizeReal)
 
   return retv
 ! end AddRealArray
 ! ------------------------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------------
+! same as the other over loads but note the elementSize parameter.  this will be the 
+! string length of the input parameter.  required so the driver knows how many 
+! bytes to copy 
+! ------------------------------------------------------------------------------------
 ParametersClass.AddCStringArray procedure(long array, long elementSize) !,sqlReturn,proc
 
 retv sqlReturn
@@ -495,6 +530,22 @@ retv   sqlReturn,auto
 ! end AddOutParameter
 ! --------------------------------------------------------------------------------
 
+ParametersClass.AddOutParameter procedure(*real varPtr) !,sqlReturn,proc
+
+retv   sqlReturn,auto
+
+  code
+ 
+  retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_DOUBLE, SQL_FLOAT, eSizeReal, 0, address(varPtr), eSizeReal)
+
+  return retv
+! end AddOutParameter
+! --------------------------------------------------------------------------------
+
+! --------------------------------------------------------------------------------
+! worker function called by the sql string object to add the place holders to a 
+! call.  there will be one ? added for each parameter
+! --------------------------------------------------------------------------------
 ParametersClass.FillPlaceHolders procedure(sqlStrClType sqlCode, long startPos = 1) 
 
 count    long

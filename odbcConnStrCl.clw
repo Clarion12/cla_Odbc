@@ -11,7 +11,8 @@ eTrustedConnTextOff  equate('Trusted_Connection=no;')
 
 eDriverName equate('ODBC Driver 13 for SQL Server')
 
-eDriverLabel         equate('Driver={{')
+!eDriverLabel         equate('Driver={{')
+eDriverLabel         equate('Driver=')
 eServerLabel         equate('Server=')
 eDbLabel             equate('Database=')
 
@@ -66,8 +67,8 @@ baseConnStrClType.setDriverName procedure(string driverName)
 
   code 
   
-  self.driverName = eDriverLabel & clip(driverName) & '}'  & eConnDelimit
-  
+  self.driverName = eDriverLabel & clip(driverName)  & eConnDelimit
+
   return
 ! end setDbName
 ! ------------------------------------------------------------------------------
@@ -122,12 +123,26 @@ baseConnStrClType.setPortNumber procedure(string portNumber)
 ! end setPortNumber
 ! ------------------------------------------------------------------------------
 
+MSConnStrClType.Init procedure(string fullConnStr) !,virtual
+
+  code 
+
+  self.connStr &= newDynStr()
+
+  self.connStr.cat(fullConnStr)
+  self.doNotBuild = true;
+
+  return
+! ------------------------------------------------------------------------------
+
 MSConnStrClType.init procedure(string srvName, string dbName) !,virtual
 
   code
 
   parent.Init(srvName, dbName)
   self.setTrustedConn(true)
+
+  self.doNotBuild = false;
 
   return
 ! ------------------------------------------------------------------------------
@@ -156,18 +171,20 @@ MSConnStrClType.ConnectionString procedure() !,*cstring,virtual
 
   code 
   
-  ! clear it 
-  self.connStr.Kill()
-  ! and then build it
+  if (self.doNotBuild = false)
+    ! clear it 
+    self.connStr.Kill()
+    ! and then build it
   
-  ! add the defaults that are always used
-  self.connStr.cat(self.driverName & self.SrvName &  self.dbName)
+    ! add the defaults that are always used
+    self.connStr.cat(self.driverName & self.SrvName &  self.dbName)
 
-  if (self.TrustedConn = true)
-    self.connStr.cat(eTrustedConnTextOn & eConnDelimit)
-  else 
-    self.connStr.cat(eTrustedConnTextOff)
-  end  
+    if (self.TrustedConn = true)
+      self.connStr.cat(eTrustedConnTextOn) 
+    else 
+      self.connStr.cat(eTrustedConnTextOff)
+    end  
+  end 
      
   return self.connStr.cstr()
 ! end ConnectionString

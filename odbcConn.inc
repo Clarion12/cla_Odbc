@@ -6,7 +6,6 @@ _ODBCConnectionPresent_   EQUATE(1)
 
   include('odbcTypes.inc'),once
   include('dynstr.inc'),once
-  !include('odbcErrorCl.inc'),once  
   include('odbcConnStrCl.inc'),once
   include('OdbcHandleCl.inc'),once
                        
@@ -23,25 +22,48 @@ hEnv                   &OdbcHandleClType,private ! enviorment handle
 hStmt                  &OdbcStmtHandleClType,private! statement handle
 !
 connStr                &baseConnStrClType,private ! instance to hold the connection string
-! some getters, no setters.  Sometimes code will need to query these values
-! and use locally, but no code should be allowed to modify
+! -------------------------------------------------------
+! some getters, no setters.  code will need to query these values
+! and use locally, but they will never be modifed
+! ------------------------------------------------------
 gethDbc                procedure(),SQLHDBC
 gethStmt               procedure(),SQLHStmt
 gethEnv                procedure(),SQLHEnv
-isConnected            procedure(),bool
+
+! ------------------------------------------------------
+! checks to see if the connection handle input or the 
+! instance connection handle is active or dead
+! ------------------------------------------------------
+isConnected            procedure(SQLHDBC dbHandle = 0),bool
+
 ! set up and clean up
 init                   procedure(),sqlReturn
 init                   procedure(baseConnStrClType  connString),sqlReturn,proc
 kill                   procedure()
-! public methods 
-! sets the ODBC version is use based on the input
+
+! ------------------------------------------------------
+! sets the ODBC version in use 
+! ------------------------------------------------------
 setOdbcVersion         procedure(long verId),sqlReturn,proc 
-! connect and disconnect 
-connect                procedure(bool statement = withStatement),sqlReturn,proc
+
+! ------------------------------------------------------
+! connect to the database
+! if withStatement is true, the default.  a statment handle is 
+! allocated 
+! ------------------------------------------------------
+Connect                procedure(bool statement = withStatement),sqlReturn
+
+! ------------------------------------------------------
+! disconnect from the database
+! if with statment handle is true the handel is released
+! ------------------------------------------------------
 Disconnect             procedure(bool statement = withStatement),sqlReturn,proc
+
 ! read the errors and show if wanted
 getError               procedure(SQLSMALLINT HandleType, SQLHANDLE Handle),virtual,protected
 getDatabaseError       procedure(),virtual,protected
+
+asyncOn procedure(),sqlReturn
 
                      end ! class 
 
