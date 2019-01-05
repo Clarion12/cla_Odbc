@@ -416,6 +416,7 @@ wideStr CWideStr
     if (retV = sql_Success_with_info) 
       retv = sql_success
     end 
+    
     if (retv <> sql_success)
       self.getError()
     end
