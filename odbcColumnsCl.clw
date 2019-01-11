@@ -10,6 +10,9 @@
   end
 ! ---------------------------------------------------------------------------
 
+sizeOfLong    equate(4)
+sizeOfReal    equate(8)
+
 ! ---------------------------------------------------------------------------
 !  default constructor, calls the init function for the set up
 ! ---------------------------------------------------------------------------
@@ -120,7 +123,7 @@ columnsClass.getFields procedure() !,*cstring,virtual
 ! colSize = the size of the buffer or the queue field 
 ! colInd = pointer to a buffer for the size of the parameter. not used and null in this example 
 ! -----------------------------------------------------------------------------    
-columnsClass.bindColumns procedure(long hStmt) ! sqlReturn
+columnsClass.bindColumns procedure(SQLHSTMT hStmt) ! sqlReturn
 
 retv      sqlReturn(SQL_SUCCESS)  ! set ot success at the start, some calls will have an empty queue
 colInd    &long                  ! just a place holder not used
@@ -155,7 +158,7 @@ columnsClass.AddColumn procedure(*long colPtr)
 
   code 
   
-  self.addColumn(SQL_C_SLONG, address(colPtr), 4)
+  self.addColumn(SQL_C_SLONG, address(colPtr), size(colPtr))
    
   return
 ! end AddColumn
@@ -165,7 +168,7 @@ columnsClass.AddColumn procedure(string colLabel, *long colPtr)
 
   code 
   
-  self.addColumn(SQL_C_SLONG, address(colPtr), 4)  
+  self.addColumn(SQL_C_SLONG, address(colPtr), size(colPtr))  
   
   self.addField(colLabel) 
      

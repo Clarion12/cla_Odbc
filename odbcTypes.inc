@@ -44,10 +44,10 @@ SQL_NULL_HANDLE  equate(0)
 
 SQL_NTS          equate(-3)
 
-! 3.5 and better and obviously get only
+! 3.5 and better and obviously read only
 SQL_ATTR_CONNECTION_DEAD equate(1209)
-SQL_CD_TRUE              equate(1)  ! Connection is closed/dead */
-SQL_CD_FALSE             equate(0)  ! Connection is open/available */
+SQL_CD_TRUE              equate(1)  ! Connection is closed/dead
+SQL_CD_FALSE             equate(0)  ! Connection is open/alive
 
 
 Sql_Success      equate(0)

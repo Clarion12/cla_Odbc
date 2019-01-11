@@ -188,7 +188,6 @@ outWideStr Cwidestr
   code 
   
   ! if there is already a handle (connect was called twice) just return success
-  ! consider changing to throw na error, if called twice it is a programming error
   if (self.hdbc.getHandle() <= 0)
     retv = self.hDbc.allocateHandle(SQL_HANDLE_DBC, self.hEnv.getHandle())
   else
@@ -230,7 +229,7 @@ outWideStr Cwidestr
     if (statement = true) 
       retv = self.hStmt.AllocateHandle(SQL_HANDLE_STMT, self.hDbc.getHandle())
       if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
-        !self.getDatabaseError()
+        self.getDatabaseError()
       end   
     end   
   end
@@ -263,7 +262,7 @@ h         SQLHDBC,auto
   h = self.hDbc.getHandle()
   if (h > 0)
     retv = SQLDisconnect(h)
-    ! unlikely that an error will happen here or if it does that any cares 
+    ! unlikely that an error will happen here or if it does that any one cares 
     ! but grab the error, mainly for development purposes
     if (retv <> sql_Success) and (retv <> sql_Success_With_Info)
       self.getDatabaseError()

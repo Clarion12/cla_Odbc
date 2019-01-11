@@ -55,7 +55,7 @@ Connect                procedure(bool statement = withStatement),sqlReturn
 
 ! ------------------------------------------------------
 ! disconnect from the database
-! if with statment handle is true the handel is released
+! calls free handle for the connection
 ! ------------------------------------------------------
 Disconnect             procedure(bool statement = withStatement),sqlReturn,proc
 

@@ -75,7 +75,7 @@ getFields      procedure(),*cstring,virtual
 ! colSize = the size of the buffer or the queue field 
 ! colInd = pointer to a buffer for the size of the parameter. not used and null in this example 
 ! -----------------------------------------------------------------------------    
-bindColumns    procedure(long  hStmt),sqlReturn,virtual
+bindColumns    procedure(SQLHSTMT  hStmt),sqlReturn,virtual
 
 ! ------------------------------------------------------------------------------
 ! the various addColumn functions are called by the using code and are used for the

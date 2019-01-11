@@ -161,7 +161,7 @@ odbcClType.setSqlCommand procedure(string s) ! sqlReturn,protected
 odbcClType.nextResultSet procedure() 
 
 retv bool(false)
-res  sqlReturn
+res  sqlReturn,auto
 
   code 
  
@@ -220,8 +220,8 @@ retv   sqlReturn,auto
 ! ------------------------------------------------------------------------------
 odbcClType.fetch procedure(*queue q) !sqlReturn,virtual
 
-retv   sqlReturn
-hStmt  SQLHSTMT
+retv   sqlReturn,auto
+hStmt  SQLHSTMT,auto
 
   code 
   
@@ -264,7 +264,7 @@ hStmt  SQLHSTMT
 ! -----------------------------------------------------------------------------
 odbcClType.fillResult procedure(*columnsClass cols, *queue q, long setId = 1) !,sqlReturn,private
 
-retv   sqlReturn 
+retv   sqlReturn,auto
 
   code 
  
@@ -290,7 +290,7 @@ retv   sqlReturn
 ! -----------------------------------------------------------------------------
 odbcClType.getError procedure() 
 
-retv   sqlReturn
+retv   sqlReturn,auto
 err    ODBCErrorClType
 
   code 

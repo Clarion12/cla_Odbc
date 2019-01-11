@@ -6,7 +6,6 @@
   map 
     module('odbc32')
       SQLBindCol(SQLHSTMT StatementHandle, SQLUSMALLINT ColumnNumber, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, *SQLLEN StrLen_or_Ind),sqlReturn,pascal
-      SQLABindCol(SQLHSTMT StatementHandle, SQLUSMALLINT ColumnNumber, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN StrLen_or_Ind),sqlReturn,pascal,name('SqlBindCol')
     end
   end
 ! ---------------------------------------------------------------------------
@@ -16,7 +15,7 @@ columnsClass.construct procedure()
   code 
   
   self.init()
-  stop('rrrr')
+  
   return 
 ! end construct
 ! ------------------------------------------------------------------------------
@@ -28,7 +27,7 @@ retv      byte(level:benign)
   code 
 
   self.setupFailed = true
-  stop('ssss')
+  
   self.fieldList &= newDynStr()
   if (self.fieldList &= null) 
     return level:notify
@@ -103,11 +102,10 @@ x         long,auto
 
   code 
   
-  stop(8888)
   if (self.setupFailed = true) 
     return sql_error
   end 
-  stop(88)    
+  
   loop x = 1 to records(self.colq)
     get(self.colQ, x)
     retv = SQLBindCol(hStmt, self.colQ.colId, self.Colq.colType, self.colQ.colValue, self.Colq.colSize, colInd)
