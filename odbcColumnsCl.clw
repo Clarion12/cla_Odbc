@@ -33,7 +33,7 @@ columnsClass.construct procedure()
 ! ------------------------------------------------------------------------------
   
 ! ---------------------------------------------------------------------------
-!  allocates the queue and the dyn str used
+!  allocates the queue 
 ! ---------------------------------------------------------------------------  
 columnsClass.init procedure()
 
@@ -303,7 +303,7 @@ v  any
   loop x = 1 to records(self.colQ)
     get(self.colQ, x) 
     if (self.colq.allowNulls = true) 
-      self.AssignDefaultValue()
+      self.AssignDefaultValue(q)
     end ! if allow nulls
   end  ! loop
 
@@ -311,9 +311,10 @@ v  any
 ! setDefaultNullValue ----------------------------------------------------------
 
 ! -----------------------------------------------------------------------------
-!
+! assigns the default value for a type to the buffer field when the back end 
+! is a null.  
 ! -----------------------------------------------------------------------------
-columnsClass.AssignDefaultValue() !,virtual,protected
+columnsClass.AssignDefaultValue(*queue q) !,virtual,protected
 
   code 
 

@@ -8,7 +8,19 @@ _ODBCColumssPresent_   EQUATE(1)
   include('odbcHandleCl.inc'),once
   include('dynstr.inc'),once
 
+! -------------------------------------------------------------------------  
+! this is an arbitray value that is used to create an array of long values.
+! the array is used when binding the columns and the read will write back information 
+! to the array elements.  if the column is null the element will be set to 
+! SQL_NULL_DATA.
+! the value of 100 is just a number, most queries will contain less than 100 columns
+! if a larger number is needed adjust, but don't get stupid.  this waste space
+! with 100 most of the time  but doing this with dynamic arrays in Clarion is 
+! difficult at best, possiable to do but the code is complex and probably 
+! fragile. So I decedied to cheat and use a static array and waste a small amount of space.  
+! -------------------------------------------------------------------------
 numberCols  equate(100)
+
 ! -----------------------------------------------------------  
 ! queue to store the columns used in a query
 ! -----------------------------------------------------------  
@@ -157,6 +169,12 @@ AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN Bu
 ! database.  Most columns will not be null but null's must be handled in a resonale manner
 ! ------------------------------------------------------------------------------
 setDefaultNullValue procedure(*queue q) 
+
+! -----------------------------------------------------------------------------
+! assigns the default value for a type to the buffer field when the back end 
+! is a null.  
+! -----------------------------------------------------------------------------
+AssignDefaultValue(*queue q),virtual,protected
 
 ! ------------------------------------------------------------------------------
 ! returns the value of the instances allowNulls member. 
