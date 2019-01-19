@@ -10,7 +10,13 @@
   end
 ! ---------------------------------------------------------------------------
 
+defaultFloating equate(0.0)
+defaultString   equate('')
+defaultInteger  equate(0)
+defaultBoolean  equate(0)
+
 sizeOfLong    equate(4)
+sizeOfDate    equate(4)
 sizeOfReal    equate(8)
 
 ! ---------------------------------------------------------------------------
@@ -35,12 +41,6 @@ retv      byte(level:benign)
 
   code 
 
-  ! fields list is not yet used
-  self.fieldList &= newDynStr()
-  if (self.fieldList &= null) 
-    return level:notify
-  end 
-    
   self.colq &= new(columnsQueue)
   if (self.colQ &= null)
     return level:notify
@@ -63,11 +63,6 @@ columnsClass.kill procedure()
     self.colQ &= null
   end    
     
-  if (~self.fieldList &= null)
-    disposedynstr(self.fieldList)
-    self.fieldList &= null
-  end
-  
   return
 ! end kill
 ! ------------------------------------------------------------------------------
@@ -93,23 +88,11 @@ columnsClass.clearQ procedure()
   code 
   
   free(self.colQ)
-  self.fieldList.kill()
+  self.allowNulls = false
     
   return
 ! end clearQ
 ! ------------------------------------------------------------------------------
-
-! ------------------------------------------------------------------------------
-! gets the string or the list of column labels stored in the dyn str, 
-! returns a cstring 
-! ------------------------------------------------------------------------------
-columnsClass.getFields procedure() !,*cstring,virtual
-
-  code 
-  
-  return self.fieldList.cStr()
-  ! end getFields 
-! -----------------------------------------------------------------------------
 
 ! bindCols
 ! Bind the queue, group or seperate fields to the columns in the result set.
@@ -119,14 +102,13 @@ columnsClass.getFields procedure() !,*cstring,virtual
 ! hStmt   = handle to the ODBC statement
 ! colId = ord value of the parmaeter, 1, 2, 3 ... the ordinal position
 ! colType = the C data type of the column 
-! colValue = pointer to the buffer field 
+! ColBuffer = pointer to the buffer field 
 ! colSize = the size of the buffer or the queue field 
 ! colInd = pointer to a buffer for the size of the parameter. not used and null in this example 
 ! -----------------------------------------------------------------------------    
 columnsClass.bindColumns procedure(SQLHSTMT hStmt) ! sqlReturn
 
 retv      sqlReturn(SQL_SUCCESS)  ! set ot success at the start, some calls will have an empty queue
-colInd    &long                  ! just a place holder not used
 x         long,auto         
 
   code 
@@ -134,11 +116,11 @@ x         long,auto
   ! iterate over the list, if any fail return an error
   loop x = 1 to records(self.colq)
     get(self.colQ, x)
-    retv = SQLBindCol(hStmt, self.colQ.colId, self.Colq.colType, self.colQ.colValue, self.Colq.colSize, colInd)
+    retv = SQLBindCol(hStmt, self.colQ.colId, self.Colq.colType, self.colQ.ColBuffer, self.Colq.colSize, self.ArrayPtr[x])
     if (retv <> sql_Success) and (retv <> Sql_Success_With_Info) 
       break
     end  
-  end   
+  end
   
   ! don't care about info messages here
   if (retv = Sql_Success_With_Info)
@@ -154,91 +136,125 @@ x         long,auto
 ! specific data types.  each calls the AddColumn/3 function to actually 
 ! add a columns
 ! ------------------------------------------------------------------------------
-columnsClass.AddColumn procedure(*long colPtr) 
+
+columnsClass.AddColumn procedure(*byte colPtr, bool allowNulls = false, long actualQueuePos = -1)
+
+  code
+
+  self.addColumn(SQL_C_TINYINT, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
+
+  return
+! end AddColumn ------------------------------------------------------------------------------
+
+columnsClass.AddColumn procedure(*short colPtr, bool allowNulls = false, long actualQueuePos = -1)
+
+  code
+
+  self.addColumn(SQL_C_SHORT, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
+
+  return
+! end AddColumn ------------------------------------------------------------------------------
+
+columnsClass.AddColumn procedure(*long colPtr, bool allowNulls = false, long actualQueuePos = -1) 
 
   code 
   
-  self.addColumn(SQL_C_SLONG, address(colPtr), size(colPtr))
+  self.addColumn(SQL_C_SLONG, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
    
   return
-! end AddColumn
-! ------------------------------------------------------------------------------
+! end AddColumn ------------------------------------------------------------------------------
  
-columnsClass.AddColumn procedure(string colLabel, *long colPtr) 
-
-  code 
-  
-  self.addColumn(SQL_C_SLONG, address(colPtr), size(colPtr))  
-  
-  self.addField(colLabel) 
-     
-  return
-! end AddColumn
-! ------------------------------------------------------------------------------
- 
-columnsClass.AddColumn procedure(*string colPtr)
+columnsClass.AddColumn procedure(*string colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
   code 
 
-  self.addColumn(SQL_C_CHAr, address(colPtr), len(colPtr))  
+  self.addColumn(SQL_C_CHAR, address(colPtr), len(colPtr), allowNulls, actualQueuePos)  
    
   return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(string colLabel, *string colPtr)
+columnsClass.AddColumn procedure(*cstring colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
   code 
 
-  self.addColumn(SQL_C_CHAr, address(colPtr), len(colPtr))  
-  self.addField(colLabel) 
+  ! note the size(colPtr) for cstrings, don't use len() here
+  self.addColumn(SQL_C_CHAR, address(colPtr), size(colPtr), allowNulls, actualQueuePos)  
    
-  return 
+  return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(*real colPtr) 
+columnsClass.AddColumn procedure(*real colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
   code 
   
-  self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr))
+  self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
      
   return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(string colLabel, *real colPtr) 
+columnsClass.AddColumn procedure(*sreal colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
   code 
   
-  self.addColumn(SQL_C_DOUBLE, address(colPtr), size(colPtr))
-  self.addField(colLabel) 
+  self.addColumn(SQL_C_FLOAT, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
      
   return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(*TIMESTAMP_STRUCT colPtr)
+columnsClass.AddColumn procedure(*decimal colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
   code 
   
-  self.addColumn(SQL_C_TYPE_TIMESTAMP, address(colPtr), size(TIMESTAMP_STRUCT))
+  self.addColumn(SQL_C_DECIMAL, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
+     
+  return
+! end AddColumn
+! ------------------------------------------------------------------------------
+
+columnsClass.AddBooleanColumn procedure(*bool colPtr, bool allowNulls = false, long actualQueuePos = -1)
+
+  code 
+  
+  self.addColumn(SQL_C_BIT, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
+
+  return
+! end AddColumn
+! ------------------------------------------------------------------------------
+
+columnsClass.AddColumn procedure(*TIMESTAMP_STRUCT colPtr, bool allowNulls = false, long actualQueuePos = -1)
+
+  code 
+  
+  self.addColumn(SQL_C_TYPE_TIMESTAMP, address(colPtr), size(TIMESTAMP_STRUCT), allowNulls, actualQueuePos)
+   
+  return
+! end AddColumn
+! ------------------------------------------------------------------------------
+  
+columnsClass.AddColumn procedure(*Date colPtr, bool allowNulls = false, long actualQueuePos = -1)
+
+  code 
+  
+  self.addColumn(SQL_C_DATE, address(colPtr), sizeOfDate, allowNulls, actualQueuePos)
    
   return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddColumn procedure(string colLabel, *TIMESTAMP_STRUCT colPtr)
+columnsClass.AddColumn procedure(*time colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
   code 
   
-  self.addColumn(SQL_C_TYPE_TIMESTAMP, address(colPtr), size(TIMESTAMP_STRUCT))
-  self.addField(colLabel) 
+  self.addColumn(SQL_C_TIME, address(colPtr), size(colPtr), allowNulls, actualQueuePos)
    
   return
 ! end AddColumn
 ! ------------------------------------------------------------------------------
-  
+
 ! ------------------------------------------------------------------------------
 ! add a column to the queue.  each column added here will be bound to the 
 ! statment handle.  The colums are bound when the execute function is called.
@@ -246,35 +262,92 @@ columnsClass.AddColumn procedure(string colLabel, *TIMESTAMP_STRUCT colPtr)
 ! in a derived instance.
 ! the columns are boud in the sequence they are added.
 ! ------------------------------------------------------------------------------  
-columnsClass.AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength) 
+columnsClass.AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, bool allowNulls = false, long actualQueuePos = -1) 
 
   code 
   
   ! order is the order the columns are added
   self.colQ.ColId = records(self.colq) + 1
   self.colq.ColType = targetType
-  self.colQ.ColValue = TargetValuePtr
+  self.colQ.ColBuffer = TargetValuePtr
   self.colQ.ColSize = BufferLength
+
+  if (allowNulls = true) 
+    self.allowNulls = true
+  end 
+
+  self.colq.allowNulls = allowNulls
+  if (actualQueuePos = -1) 
+    self.colq.actualQuePos = self.colq.colId
+  else 
+    self.colq.actualQuePos = actualQueuePos
+  end
 
   add(self.Colq)
    
   return
 ! end AddColumn
-! ------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------
 
-! ---------------------------------------------------------
-! adds a label to the list of columns not implemented
-! ---------------------------------------------------------
-columnsClass.addField procedure(string colLabel) 
+! ------------------------------------------------------------------------------
+! sets the default value for the queue elment if the read returns a null from the 
+! database.  Most columns will not be null but null's must be handled in a resonale manner
+! ------------------------------------------------------------------------------
+columnsCLass.setDefaultNullValue procedure(*queue q) 
+
+x  long,auto
+v  any
+
+  code
+
+  loop x = 1 to records(self.colQ)
+    get(self.colQ, x) 
+    if (self.colq.allowNulls = true) 
+      self.AssignDefaultValue()
+    end ! if allow nulls
+  end  ! loop
+
+  return
+! setDefaultNullValue ----------------------------------------------------------
+
+! -----------------------------------------------------------------------------
+!
+! -----------------------------------------------------------------------------
+columnsClass.AssignDefaultValue() !,virtual,protected
 
   code 
-  
-  if (self.fieldList.strLen() > 0)
-    self.fieldList.cat(', ' & colLabel)
-  else
-    self.fieldList.cat(colLabel)
-  end
-  
+
+  ! if the array at the column index indicates null data
+  ! assign to an any and set the default for the type
+  if (self.ArrayPtr[self.colQ.colId] = SQL_NULL_DATA) 
+    v &= what(q, self.colQ.actualQuePos)
+    case self.colq.colType 
+      of SQL_C_FLOAT
+      orof SQL_C_DOUBLE
+        v = defaultFloating
+      of SQL_C_CHAR 
+        v = defaultString
+      of SQL_C_TINYINT
+      orof SQL_C_SHORT
+      orof SQL_C_SLONG
+        v = defaultInteger
+      of SQL_C_BIT
+        v = defaultBoolean
+      end   ! case 
+    end ! if arrayptr
+
+
   return
-! end addField
-! ------------------------------------------------------------------------------  
+! end AssignDefaultValue -------------------------------------------------------
+
+! ------------------------------------------------------------------------------
+! returns the value of the instances allowNulls member. 
+! this is called when the result set is being read so the additional 
+! work for a null column can be handled
+! ------------------------------------------------------------------------------
+columnsClass.getAllowNulls procedure() !,bool
+
+  code 
+
+  return self.allowNulls
+! end getAllowNulls -------------------------------------------------------------  

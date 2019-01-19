@@ -8,15 +8,20 @@ _ODBCColumssPresent_   EQUATE(1)
   include('odbcHandleCl.inc'),once
   include('dynstr.inc'),once
 
+numberCols  equate(100)
 ! -----------------------------------------------------------  
 ! queue to store the columns used in a query
 ! -----------------------------------------------------------  
 ColumnsQueue queue,type
 ColId          long           ! ord of the column in the select statement
-ColName        string(eColNameLength)  ! name of the col, not used by the odbc but by the classes
 ColType        SQLSMALLINT    ! type of the col, odbc const
-ColValue       SQLPOINTER     ! pointer to the buffer for the result
+ColBuffer      SQLPOINTER     ! pointer to the buffer for the result
 ColSize        SQLLEN         ! size of the column in bytes
+colLenStrPtr   long
+allowNulls     bool           ! true indicates this column allws nulls in the back end
+ActualQuePos   long           ! more for the UI than the column, sets the actual position in the queue
+                              ! if not the same as the sequence the column was added
+                              ! list box format string is the driver
              end 
 
 ! --------------------------------------------------------------------- 
@@ -26,42 +31,38 @@ ColSize        SQLLEN         ! size of the column in bytes
 ! a queue, a group, an individual field, ...
 ! --------------------------------------------------------------------  
 columnsClass class,type,module('odbcColumnsCl.clw'),link('odbcColumnsCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
-! queue of the columns that will be used by the databse call
+! queue of the columns that will be used by the database call
 colQ           &ColumnsQueue,private
-! list of the fields in a comma delimited string
-! not yet implemented, will be used to build add hoc sql statements
-fieldList      &IDynStr
-
+! array of long for use by the bind column call
+! this is used for the nullvalues on the back end
+! and if the column is null it will be set to SQL_NULL_DATA
+ArrayPtr       long,dim(numberCols)
+! indicaates that at least one column in the result set allows null values
+AllowNulls     bool,private
 ! ---------------------------------------------------------------------------
 !  default constructor, calls the init function for the set up
 ! ---------------------------------------------------------------------------
-construct      procedure()
+construct procedure()
 
 ! ---------------------------------------------------------------------------
-!  allocates the queue and the dyn str used
+!  allocates the queue 
 ! ---------------------------------------------------------------------------  
-init           procedure(),byte,proc
+init procedure(),byte,proc
 
 ! ------------------------------------------------------------------------------
 ! disposes the queue and the dyn str
 ! ------------------------------------------------------------------------------
-kill           procedure()
+kill procedure()
 
 ! ---------------------------------------------------------------------------
 !  default destructor, calls the kill function for the clean up
 ! ---------------------------------------------------------------------------
-destruct       procedure(),virtual
+destruct procedure(),virtual
 
 ! ------------------------------------------------------------------------------
 ! free the queue and the dyn str that contains the fileds names
 ! ------------------------------------------------------------------------------
-clearQ         procedure()
-
-! ------------------------------------------------------------------------------
-! gets the string or the list of column labels stored in the dyn str, 
-! returns a cstring, not implemented
-! ------------------------------------------------------------------------------
-getFields      procedure(),*cstring,virtual
+clearQ procedure()
 
 ! ------------------------------------------------------------------------------
 ! Bind the queue, group or seperate fields to the columns in the result set.
@@ -75,39 +76,95 @@ getFields      procedure(),*cstring,virtual
 ! colSize = the size of the buffer or the queue field 
 ! colInd = pointer to a buffer for the size of the parameter. not used and null in this example 
 ! -----------------------------------------------------------------------------    
-bindColumns    procedure(SQLHSTMT  hStmt),sqlReturn,virtual
+bindColumns procedure(SQLHSTMT  hStmt),sqlReturn,virtual
 
 ! ------------------------------------------------------------------------------
 ! the various addColumn functions are called by the using code and are used for the
 ! specific data types.  each calls the AddColumn/3 function to actually 
 ! add a columns
 ! ------------------------------------------------------------------------------
-AddColumn      procedure(*long colPtr)
-AddColumn      procedure(string colLabel, *long colPtr)
 !
-AddColumn      procedure(*string colPtr)
-AddColumn      procedure(string colLabel, *string colPtr)
+
+! --------------------------------------------------
+! AddColumn, each of these functions add a column that
+! will be filled from a result set.  
+! inputs :
+! colPtr, a pointer (an address) to the buffer field,
+!         the filed can be from a queue, a group, a class 
+!         or an individual variable.
+! allowNulls, default is false which indicates the column in the 
+!             database does not allow null values. 
+!             true indicates the column does allow nulls
+! actualQueuePos, an integer that indicates the location of the field 
+!                 in sequence when using a queue.  the value is 
+!                 used when a queue is the buffer that will displayed in 
+!                 a list and the displayed position does not match 
+!                 the ordinal of the queue  
+! --------------------------------------------------
+
+! --------------------------------------------------
+! the first three are for the typical numeric types used
+! the unsigned type can be added if needed/wanted
+! --------------------------------------------------
+AddColumn procedure(*byte colPtr, bool allowNulls = false, long actualQueuePos = -1)
+AddColumn procedure(*short colPtr, bool allowNulls = false, long actualQueuePos = -1)
+AddColumn procedure(*long colPtr, bool allowNulls = false, long actualQueuePos = -1)
 !
-AddColumn      procedure(*real colPtr)
-AddColumn      procedure(string colLabel, *real colPtr)
+! --------------------------------------------------
+! the string types 
+! these will also be used for the guid or unique identifier 
+! data type
+! --------------------------------------------------
+AddColumn procedure(*string colPtr, bool allowNulls = false, long actualQueuePos = -1)
+AddColumn procedure(*cstring colPtr, bool allowNulls = false, long actualQueuePos = -1)
 !
-AddColumn      procedure(*TIMESTAMP_STRUCT colPtr)
-AddColumn      procedure(string colLabel, *TIMESTAMP_STRUCT colPtr)
+! --------------------------------------------------
+! the floating point  types 
+! --------------------------------------------------
+AddColumn procedure(*real colPtr, bool allowNulls = false, long actualQueuePos = -1)
+AddColumn procedure(*sreal colPtr, bool allowNulls = false, long actualQueuePos = -1)
+!
+! --------------------------------------------------
+! decimal type 
+! --------------------------------------------------
+AddColumn procedure(*decimal colPtr, bool allowNulls = false, long actualQueuePos = -1)
+!
+! --------------------------------------------------
+! boolean type, this is actually long in Clarion 
+! and useing bool as the parameter type cause compiler issues.
+! --------------------------------------------------
+AddBooleanColumn procedure(*bool colPtr, bool allowNulls = false, long actualQueuePos = -1)
+!
+! --------------------------------------------------
+! date, time and datetime 
+! --------------------------------------------------
+AddColumn procedure(*TIMESTAMP_STRUCT colPtr, bool allowNulls = false, long actualQueuePos = -1)
+AddColumn procedure(*Date colPtr, bool allowNulls = false, long actualQueuePos = -1)
+AddColumn procedure(*time colPtr, bool allowNulls = false, long actualQueuePos = -1)
 
 ! ------------------------------------------------------------------------------
 ! add a column to the queue.  each column added here will be bound to the 
 ! statment handle.  The colums are bound when the execute function is called.
-! this is typically called by the various addColumn/1 functions but can be called directly
+! this is typically called by the various addColumn/3 functions but can be called directly
 ! in a derived instance.
 !
 ! the columns are boud in the sequence they are added.
 ! ------------------------------------------------------------------------------  
-AddColumn      procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength),protected
+AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, bool allowNulls = false, long actualQueuePos = -1),protected
 
-! ---------------------------------------------------------
-! adds a label to the list of columns not implemented
-! ---------------------------------------------------------
-addField       procedure(string colLabel),protected,virtual
+! ------------------------------------------------------------------------------
+! sets the default value for the queue elment if the read returns a null from the 
+! database.  Most columns will not be null but null's must be handled in a resonale manner
+! ------------------------------------------------------------------------------
+setDefaultNullValue procedure(*queue q) 
+
+! ------------------------------------------------------------------------------
+! returns the value of the instances allowNulls member. 
+! this is called when the result set is being read so the additional 
+! work for a null column can be handled
+! ------------------------------------------------------------------------------
+getAllowNulls procedure(),bool
+
             end 
 
   _EndOfInclude_
