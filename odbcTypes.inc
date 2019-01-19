@@ -5,6 +5,8 @@ withoutStatement equate(false)
 
 odbcWideStr       equate(long)
 
+GuidLength        equate(37)
+
 dbVendor itemize,pre()
 MS         equate
 PostGre    equate
@@ -79,6 +81,12 @@ SQLPOINTER       equate(long)
 SQL_OV_ODBC3_80  equate(380)
 SQL_ATTR_ODBC_VERSION equate(200)
 
+SQL_ATTR_CONNECTION_POOLING equate(201)
+SQL_CP_OFF                  equate(0)
+SQL_CP_ONE_PER_DRIVER       equate(1)
+SQL_CP_ONE_PER_HENV         equate(2)
+SQL_CP_DRIVER_AWARE         equate(3)
+
 SQL_OV_ODBC3     equate(3)
 
 SQL_C_CHAr       equate(1)
@@ -90,18 +98,35 @@ SQL_SOPT_SS_PARAM_FOCUS equate(SQL_SOPT_SS_BASE+11)
 SQL_C_DEFAULT    equate(99)
 
 SQL_CHAR         equate(1)
+SQL_TINYINT      equate(-6)
+SQL_SMALLINT     equate(5)
 SQL_INTEGER      equate(4)
 SQL_FLOAT        equate(6)
+SQL_REAL         equate(7)
+
+SQL_DATE         equate(9)
+SQL_TIME         equate(10)
 SQL_TYPE_TIMESTAMP equate(93)
 
 SQL_SIGNED_OFFSET equate(-20)
 SQL_NO_TOTAL      equate(-4)
 
-
+SQL_C_SHORT      equate(5)
 SQL_C_SLONG      equate(SQL_INTEGER + SQL_SIGNED_OFFSET)
 SQL_C_FLOAT      equate(7)
 SQL_C_DOUBLE     equate(8)
 SQL_C_TYPE_TIMESTAMP equate(11)
+
+SQL_C_DECIMAL    equate(2)
+SQL_C_NUMERIC    equate(3)
+
+SQL_NULL_DATA    equate(-1)
+
+SQL_C_DATE       equate(9)
+SQL_C_TIME       equate(10)
+
+SQL_C_TINYINT      equate(-6)
+SQL_C_BIT          equate(-7)
 
 SQL_PARAM_INPUT        equate(1)
 SQL_PARAM_OUTPUT       equate(4)
@@ -152,8 +177,11 @@ SQL_ASYNC_DBC_ENABLE_ON      EQUATE(1)
    
 RETCODE    equate(short)
 
+eSizeSReal equate(4)
 eSizeReal  equate(8)
 eSizeLong  equate(4)
+eSizeShort equate(2)
+eSizeByte  equate(1)
 
 eColNameLength    equate(50)
 eParamNameLength  equate(50)
