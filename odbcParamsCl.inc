@@ -16,7 +16,6 @@ _ODBCParamPresent_   EQUATE(1)
 ! ----------------------------------------------------------------------
 ParametersQueue queue,type
 paramId           long     ! ordinal of the paremter
-paramName         string(eParamNameLength)  ! name of the parameter, not yet used      
 InOutType         SQLSMALLINT   ! type of parameter. in or out 
 valueType         SQLSMALLINT   ! C type of the data in the parameter
 paramType         SQLSMALLINT   ! ODBC type of the parameter 
@@ -35,27 +34,27 @@ paramQ                &ParametersQueue
 ! ---------------------------------------------------------------------------
 ! default constructor for the parameters
 ! ---------------------------------------------------------------------------
-construct             procedure()
+construct procedure()
 
 ! ---------------------------------------------------------------------------
 ! sets up the object for use allocates a queue and sets a flag
 ! ---------------------------------------------------------------------------  
-init                  procedure(),byte,proc
+init procedure(),byte,proc
 
 ! ---------------------------------------------------------------------------
 ! does the standard clean up when the object goes out of scope 
 ! ---------------------------------------------------------------------------    
-kill                  procedure()
+kill procedure()
 
 ! ---------------------------------------------------------------------------
 ! destructor, calls the Kill method
 ! ---------------------------------------------------------------------------        
-destruct              procedure(),virtual
+destruct procedure(),virtual
 
 ! ---------------------------------------------------------------------------------
 ! free the queue of parameters, this does not remove the bindings, if any
 ! ---------------------------------------------------------------------------------
-clearQ                procedure()
+clearQ procedure()
 
 ! -----------------------------------------------------------------------------
 ! Bind a table valued parameter for the statement.  
@@ -77,14 +76,14 @@ clearQ                procedure()
 ! paramLength = the size of the paramPtr buffer
 ! colInd = pointer to a buffer for the size of the parameter.   not used and null in this example 
 ! -----------------------------------------------------------------------------  
-bindParameters        procedure(SQLHSTMT hStmt, *long numberRows),sqlReturn
+bindParameters procedure(SQLHSTMT hStmt, *long numberRows),sqlReturn
 
 ! ---------------------------------------------------------------------------------
 ! set the focus of the driver to the table, once the focus is set 
 ! bind the columns of the table
 ! note, this must be called when using a table valued parameter
 ! ---------------------------------------------------------------------------------
-focusTableParameter   procedure(SQLHSTMT hStmt, long ordinal),sqlReturn,proc  
+focusTableParameter procedure(SQLHSTMT hStmt, long ordinal),sqlReturn,proc  
 
 ! ---------------------------------------------------------------------------------
 ! remove  the focus of the driver from the table, call this after the table columns
@@ -115,13 +114,13 @@ unfocusTableParameter procedure(SQLHSTMT hStmt),sqlReturn,proc
 ! paramLength = the size of the paramPtr buffer
 ! colInd = pointer to a buffer for the size of the parameter.   not used and null in this example 
 ! -----------------------------------------------------------------------------  
-bindParameters        procedure(SQLHSTMT hStmt),sqlReturn
+bindParameters procedure(SQLHSTMT hStmt),sqlReturn
 
 ! ----------------------------------------------------------
 ! function the check the rows in the queue
 ! returns true if there is at least one row and false is no  rows
 ! ----------------------------------------------------------
-HasParameters         procedure(),bool
+HasParameters procedure(),bool
 
 ! ---------------------------------------------------------------------------------
 ! add a table parameter to the call
@@ -130,30 +129,47 @@ HasParameters         procedure(),bool
 ! 
 ! if the type name is not found the call to the backend  will fail
 ! ---------------------------------------------------------------------------------
-AddTableParameter     procedure(long numberRows, *cstring tableName),sqlReturn,proc
+AddTableParameter procedure(long numberRows, *cstring tableName),sqlReturn,proc
 
 ! ----------------------------------------------------------------------------------
 ! add a parameter to the queue.  typically called internally but can be used 
 ! from anywhere if needed desired.
 ! ----------------------------------------------------------------------------------
-addParameter          procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc
-
-! labeld parameter, not yet used
-addParameter          procedure(string paramName, SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc
+addParameter procedure(SQLSMALLINT InOutType, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLULEN ColumnSize, SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, SQLLEN BufferLength),byte,proc
 
 ! ----------------------------------------------------------
 ! add the various input parameters
-! the overloads with the name input are not yet used but cause no harm if called
-! the missing data types will be added
 ! ----------------------------------------------------------
-AddInParameter        procedure(*long colPtr),sqlReturn,proc
-AddInParameter        procedure(string pName, *long varPtr),sqlReturn,proc
-AddInParameter        procedure(*cstring colPtr),sqlReturn,proc     
-AddInParameter        procedure(string pName, *cstring colPtr),sqlReturn,proc     
-AddInParameter        procedure(*real colPtr),sqlReturn,proc
-AddInParameter        procedure(string pname, *real colPtr),sqlReturn,proc
-AddInParameter        procedure(*TIMESTAMP_STRUCT colPtr),sqlReturn,proc
-AddInParameter        procedure(string pname, *TIMESTAMP_STRUCT colPtr),sqlReturn,proc
+
+! ----------------------------------------------------
+! integer types 
+! ----------------------------------------------------
+AddInParameter procedure(*byte varPtr),sqlReturn,proc
+AddInParameter procedure(*short varPtr),sqlReturn,proc
+! ----------------------------------------------------------
+! add a long parameter.  clarion uses an equate for booleans 
+! this will also be used when working with clarion's bool
+! ----------------------------------------------------------
+AddInParameter procedure(*long colPtr),sqlReturn,proc
+
+! ----------------------------------------------------
+! string types 
+! ----------------------------------------------------
+AddInParameter procedure(*cstring varPtr),sqlReturn,proc     
+AddInParameter procedure(*string varPtr),sqlReturn,proc     
+
+! ----------------------------------------------------
+! floating point types
+! ----------------------------------------------------
+AddInParameter procedure(*sreal varPtr),sqlReturn,proc
+AddInParameter procedure(*real varPtr),sqlReturn,proc
+
+! ----------------------------------------------------
+! date types 
+! ----------------------------------------------------
+AddInParameter procedure(*date varPtr),sqlReturn,proc
+AddInParameter procedure(*time varPtr),sqlReturn,proc
+AddInParameter procedure(*TIMESTAMP_STRUCT varPtr),sqlReturn,proc
 
 ! ----------------------------------------------------------
 ! add the different types of arrays for the table valued parameters
@@ -162,30 +178,30 @@ AddInParameter        procedure(string pname, *TIMESTAMP_STRUCT colPtr),sqlRetur
 ! the array parameter is the address of the first element in the array
 ! so call like this AddLongArray(address(someArray[1]))
 ! ----------------------------------------------------------
-AddlongArray          procedure(long array),sqlReturn,proc
-AddRealArray          procedure(long array),sqlReturn,proc
+AddlongArray procedure(long array),sqlReturn,proc
+AddRealArray procedure(long array),sqlReturn,proc
 ! ------------------------------------------------------------------------------------
 ! same as the other over loads but note the elementSize parameter.  this will be the 
 ! string length the array elements,  for input parameter.  required so the driver knows 
 ! how many bytes to copy 
 ! ------------------------------------------------------------------------------------
-AddCStringArray       procedure(long array, long elementSize),sqlReturn,proc
+AddCStringArray procedure(long array, long elementSize),sqlReturn,proc
 
 ! ----------------------------------------------------------------
 ! add the output types 
 ! ----------------------------------------------------------------
-AddOutParameter       procedure(*long varPtr),sqlReturn,proc
-AddOutParameter       procedure(*cstring varPtr),sqlReturn,proc
-AddOutParameter       procedure(*real varPtr),sqlReturn,proc
+AddOutParameter procedure(*long varPtr),sqlReturn,proc
+AddOutParameter procedure(*cstring varPtr),sqlReturn,proc
+AddOutParameter procedure(*real varPtr),sqlReturn,proc
 
 ! --------------------------------------------------------------------------------
 ! worker function called by the sql string object to add the place holders to a 
 ! call.  there will be one ? added for each parameter
 ! --------------------------------------------------------------------------------
-FillPlaceHolders      procedure(sqlStrClType sqlCode, long startPos = 1),long
+FillPlaceHolders procedure(sqlStrClType sqlCode, long startPos = 1),long
 
 ! these are for the name values, not yet used
-findByParamName       procedure(string pName),sqlReturn
+afindByParamName  procedure(string pName),sqlReturn
                     end
 
   _EndOfInclude_

@@ -281,7 +281,7 @@ retv sqlReturn
   self.paramQ.paramType = SQL_SS_TABLE     ! type
   self.paramQ.paraSize = numberRows        
   self.paramQ.DecimalDigits = 0            ! always zero for the table type
-  self.paramQ.tableName = tableName        ! thisis the type name on the server
+  self.paramQ.tableName = tableName        ! this is the type name on the server
   self.paramQ.paramLength = SQL_NTS         
   self.paramQ.ParamPtr = 0                 ! always zero or a null pointer
 
@@ -331,32 +331,28 @@ retv     byte(level:benign)
 ! end addParameter
 ! ------------------------------------------------------------------------------------
 
-! ----------------------------------------------------------------------------------
-! add a parameter to the queue by name.  not yet used 
-! ----------------------------------------------------------------------------------
-ParametersClass.addParameter procedure(string paramName, |
-                                       SQLSMALLINT InOutType, SQLSMALLINT ValueType, | 
-                                       SQLSMALLINT ParameterType, SQLULEN ColumnSize, | 
-                                       SQLSMALLINT DecimalDigits, SQLPOINTER varPtr, | 
-                                       SQLLEN BufferLength) !,byte,proc,private
-
-retv     byte,auto 
-
-   code 
-   
-   retv = self.addParameter(InOutType, ValueType, ParameterType, ColumnSize, DecimalDigits, varPtr, BufferLength)
-   if (retv = level:benign) 
-     self.paramQ.paramName = upper(paramName)
-     put(self.paramQ) 
-   end
-     
-   return retv 
-! end addParameter
-! ------------------------------------------------------------------------------------
-
 ! ------------------------------------------------------------------------------------
 ! add the various input parameters
 ! ------------------------------------------------------------------------------------
+
+ParametersClass.AddInParameter procedure(*byte varPtr)  !,sqlReturn,proc
+
+  code 
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_TINYINT, SQL_TINYINT, eSizeByte, 0, address(varPtr), eSizeByte)
+
+  return 0
+! end AddInParameter --------------------------------------------------------
+
+ParametersClass.AddInParameter procedure(*short varPtr) !,sqlReturn,proc
+  
+  code 
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_SHORT, SQL_SMALLINT, eSizeShort, 0, address(varPtr), eSizeShort)
+
+  return 0
+! end AddInParameter --------------------------------------------------------
+
 ParametersClass.AddInParameter procedure(*long varPtr)
 
 retv   sqlReturn
@@ -369,15 +365,15 @@ retv   sqlReturn
 ! end AddInParameter
 ! --------------------------------------------------------------------------------
 
-ParametersClass.AddInParameter procedure(string pName, *long varPtr) !,sqlReturn,proc
+ParametersClass.AddInParameter procedure(*sreal varPtr) !,sqlReturn,proc
 
 retv   sqlReturn
 
-  code 
-  
-  self.addParameter(pName, SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, eSizeLong, 0, address(varPtr), eSizeLong)
-  
-  return retv
+  code
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_REAL, eSizeSReal, 0, address(varPtr), eSizeSReal)
+
+  return retv  
 ! end AddInParameter
 ! --------------------------------------------------------------------------------
 
@@ -388,18 +384,6 @@ retv   sqlReturn
   code
 
   self.addParameter(SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, eSizeReal, 0, address(varPtr), eSizeReal)
-
-  return retv  
-! end AddInParameter
-! --------------------------------------------------------------------------------
-
-ParametersClass.AddInParameter procedure(string pName, *real varPtr) !,sqlReturn,proc
-
-retv   sqlReturn
-
-  code
-
-  self.addParameter(pName, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, eSizeReal, 0, address(varPtr), eSizeReal)
 
   return retv  
 ! end AddInParameter
@@ -417,17 +401,41 @@ retv   sqlReturn
 ! end AddInParameter
 ! --------------------------------------------------------------------------------
 
-ParametersClass.AddInParameter procedure(string pName, *cstring varPtr) !,sqlReturn,proc
+ParametersClass.AddInParameter procedure(*string varPtr) !,sqlReturn,proc
 
 retv   sqlReturn
 
   code
-  
-  self.addParameter(pName, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, size(varPtr), 0, address(varPtr), size(varPtr))
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, size(varPtr), 0, address(varPtr), size(varPtr))
   
   return retv  
 ! end AddInParameter
 ! --------------------------------------------------------------------------------
+
+ParametersClass.AddInParameter procedure(*date varPtr)  !,sqlReturn,proc
+
+retv   sqlReturn
+
+  code
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_DATE, SQL_DATE, size(SQL_C_DATE), 0, address(varPtr), size(SQL_C_DATE))
+
+  return retv    
+! end AddInParameter
+! --------------------------------------------------------------------------------  
+
+ParametersClass.AddInParameter procedure(*time varPtr)  !,sqlReturn,proc
+
+retv   sqlReturn
+
+  code
+
+  self.addParameter(SQL_PARAM_INPUT, SQL_C_TIME, SQL_TIME, size(SQL_C_TIME), 0, address(varPtr), size(SQL_C_TIME))
+
+  return retv    
+! end AddInParameter
+! --------------------------------------------------------------------------------  
 
 ParametersClass.AddInParameter procedure(*TIMESTAMP_STRUCT varPtr) !,sqlReturn,proc  
 
@@ -436,18 +444,6 @@ retv   sqlReturn
   code
 
   self.addParameter(SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, size(SQL_C_TYPE_TIMESTAMP), 0, address(varPtr), size(SQL_C_TYPE_TIMESTAMP))
-
-  return retv    
-! end AddInParameter
-! --------------------------------------------------------------------------------  
-
-ParametersClass.AddInParameter procedure(string pName, *TIMESTAMP_STRUCT varPtr) !,sqlReturn,proc  
-
-retv   sqlReturn,auto
-
-  code
-
-  retv = self.addParameter(pName, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, size(SQL_C_TYPE_TIMESTAMP), 0, address(varPtr), size(SQL_C_TYPE_TIMESTAMP))
 
   return retv    
 ! end AddInParameter
@@ -567,18 +563,12 @@ recCount long
 ! end FillPlaceHolders
 ! --------------------------------------------------------------------------------  
 
-ParametersClass.findByParamName procedure(string pName) !,sqlReturn
+ParametersClass.afindByParamName procedure(string pName) !,sqlReturn
 
 retv   sqlReturn(sql_Success)
 
   code 
 
-  self.paramQ.paramName = upper(pName)
-  get(self.paramQ, +self.paramQ.paramName)
-  if (errorcode() > 0)
-    retv = sql_Error
-  end  
-  
   return retv
 ! end findByParamName
 ! --------------------------------------------------------------------------------  
