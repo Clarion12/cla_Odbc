@@ -1,7 +1,8 @@
 # cla_Odbc
 Demo of using ODBC 13 with Clarion win32.
 
-Demo shows how to use the ODBC 13.1 driver with clarion.  
+Demo shows how to use the ODBC 13.1 driver with clarion.  the demo will work wit h11 and 17.1, 17.2 and 17.3
+
 
 The ODBC 13 driver does not expose ANSI strings functions only wide strings. Clarion does not support wide strings,
 at least not yet. some day, soon (tm), maybe, it could happen, ...
