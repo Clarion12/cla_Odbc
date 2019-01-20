@@ -25,8 +25,8 @@ ODBCConnectionClType.init procedure() !,sqlReturn
 retv    sqlReturn,auto
 
   code 
-
-  self.hEnv &= new(OdbcHandleClType) 
+  
+  self.hEnv &= new(EnvHandle) 
   if (self.hEnv &= null) 
     return sql_Error
   end
@@ -41,9 +41,7 @@ retv    sqlReturn,auto
     return sql_Error
   end   
   
-  retv = self.hEnv.allocateHandle(SQL_HANDLE_ENV, Sql_Null_Handle)
-  
-  return retv
+  return Sql_Success
 ! end init
 ! -------------------------------------------------------------------------
 
@@ -183,16 +181,14 @@ outConnStr cstring(501)
 wideStr    Cwidestr
 outWideStr Cwidestr
 
-!outs cstr
-
   code 
   
   ! if there is already a handle (connect was called twice) just return success
-  if (self.hdbc.getHandle() <= 0)
+!  if (self.hdbc.getHandle() <= 0)
     retv = self.hDbc.allocateHandle(SQL_HANDLE_DBC, self.hEnv.getHandle())
-  else
-    retv = sql_Success
-  end
+!  else
+!    retv =  sql_Success
+!  end
 
   if (retv = sql_Success) or (retv = sql_success_with_info)
     ! make the connection string a wide string for the ODBC 
@@ -212,13 +208,9 @@ outWideStr Cwidestr
     ! that are avaliable from the driver
     ! ---------------------------------------------------
     !if (retv <> Sql_Success)
-     ! self.getDatabaseError()
+    !  self.getDatabaseError()    
     !end  
-
-    ! take the output string and convent it to a cla cstring 
-    !if (outs.Init(outWideStr) = true)
-      !stop(outs.getCStr())
-    !end
+    
   end   
 
   ! check for with info, this call always returns with info 
@@ -226,11 +218,8 @@ outWideStr Cwidestr
     self.getDatabaseError()
   else 
     ! allocate the statement handle if needed/wanted
-    if (statement = true) 
-      retv = self.hStmt.AllocateHandle(SQL_HANDLE_STMT, self.hDbc.getHandle())
-      if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
-        self.getDatabaseError()
-      end   
+    if (statement = true)     
+      retv = self.AllocateStmtHandle()
     end   
   end
  
@@ -243,21 +232,101 @@ outWideStr Cwidestr
 ! end connect 
 ! ----------------------------------------------------------------------
 
+! ------------------------------------------------------
+! Allocates a statement handle for the connection
+! called by the connect function or called 
+! by the using code to create a statement handle
+! note, the default is to create a statement handle with the 
+! hDbc, most actions will only need a single sTmt handle 
+! and will close the connection when the action completes.
+! see the over loaded function if multiple handle are needed.
+! ------------------------------------------------------
+ODBCConnectionClType.AllocateStmtHandle procedure() !,protected,virtual
+
+retv sqlReturn,auto
+
+  code
+
+  retv = self.hStmt.AllocateHandle(SQL_HANDLE_STMT, self.hDbc.getHandle())
+  if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
+    self.getDatabaseError()
+  end   
+
+  return retv
+! end  AllocateStmtHandle ----------------------------------------------
+
+! ------------------------------------------------------
+! Allocates a statement handle for the connection
+! called by user to allocate a more than the default statement handles.
+! this function is not used by the connect call.
+! 
+! note, the caller should check the value of the output hStmt
+! if zero or less the handle was not allocated
+! ------------------------------------------------------
+ODBCConnectionClType.AllocateStmtHandle procedure(*SQLHSTMT hStmt) !,protected,virtual
+
+retv sqlReturn,auto
+
+  code
+
+  retv = self.hStmt.AllocateHandle(self.hDbc.getHandle(), hStmt)
+  if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
+    self.getDatabaseError()
+    hStmt = SQL_NO_HANDLE
+  end   
+
+  return retv
+! end  AllocateStmtHandle ----------------------------------------------
+
+! ------------------------------------------------------
+! frees the statement handle.  if this is called then 
+! the connection no longer has a hStmt and one must be 
+! allocated before the connection is used again.
+! ------------------------------------------------------
+ODBCConnectionClType.freeStmthandle procedure(SQLHSTMT hStmt = 0) 
+
+  code
+
+  self.hStmt.freeHandle(hStmt)
+
+  return
+! end  closeStmthandle -------------------------------------------------
+
+! ------------------------------------------------------
+! clears the statement handle or any binding, result sets, ... 
+! call this when the stamenet handle is going to be used 
+! for multiple calls.  this allows the connection to perform 
+! more than one action and not need t oallocate a hStmt for each,
+! saves a little overhead
+! Note, some actions can be executed in sequence and not need 
+! the hStmt cleared, some cannot be.  Good practice would be to 
+! call the clear function between any calls, but dpending 
+! on the actual action executed it is not always required.
+!
+! if the parameter input is the default then the 
+! instance hStmt is used. if not the default the input 
+! hStmt will be used.
+! ------------------------------------------------------
+ODBCConnectionClType.clearStmthandle procedure(SQLHSTMT hStmt = 0) 
+
+  code
+ 
+  self.hstmt.freeBindings(hStmt)
+
+  return 
+! end clearStmthandle --------------------------------------------------
+
 ! ----------------------------------------------------------------------
 ! disconnect from the database, freeing all handle in use
 ! if the dbc handle is not valid then nothing is done
 ! ----------------------------------------------------------------------
-ODBCConnectionClType.Disconnect procedure(bool statement = withStatement)
+ODBCConnectionClType.Disconnect procedure()
 
 ! assume success at the start
 retv      sqlReturn(sql_Success)
 h         SQLHDBC,auto
 
   code 
-
-  if (statement = true) 
-    self.hStmt.freeHandle()
-  end
 
   h = self.hDbc.getHandle()
   if (h > 0)

@@ -14,11 +14,12 @@ _ODBCHandlePresent_   EQUATE(1)
 ! to get the value of the handle, there is no setter 
 ! ------------------------------------------------------------------                       
 OdbcHandleClType class,type,module('odbcHandleCl.clw'),link('odbcHandleCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
-handle             SQLHANDLE,private
+handle             SQLHANDLE,protected
 handleType         SQL_HANDLE_TYPE,private
 kill               procedure(),virtual
 destruct           procedure()
 allocateHandle     procedure(SQL_HANDLE_TYPE hType, SQL_HANDLE_TYPE pType),sqlReturn,proc,virtual
+freeHandle         procedure(long handleType),sqlReturn,proc,virtual
 freeHandle         procedure(),sqlReturn,proc,virtual
 getHandle          procedure(),SQLHANDLE
                  end
@@ -37,16 +38,27 @@ getHandle          procedure(),SQLHANDLE
 OdbcStmtHandleClType class(OdbcHandleClType),type,module('odbcHandleCl.clw'),link('odbcHandleCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 
 ! ------------------------------------------------------------
+! allocates a statment handle for the hDbc input.  
+! use this function if multiple statment handles are needed for 
+! for the connection. 
+! note, the caller must track the handle output and make any 
+! calls to the clear the handle or free the handle.
+! if the hDbc will be closed then the driver 
+! will manage any clean up.
+! ------------------------------------------------------------
+allocateStmtHandle     procedure(SQLHDBC hDbc, *SQLHSTMT hStmt),sqlReturn,proc
+
+! ------------------------------------------------------------
 ! unbinds the columns and the parameters for the state,ent 
 ! handle.  the statment handle at this stime could be reused 
 ! if needed/wanted
 ! ------------------------------------------------------------
-freeBindings           procedure(),sqlReturn,proc,virtual
+freeBindings           procedure(SQLHSTMT hStmt = 0),sqlReturn,proc,virtual
 
 ! ------------------------------------------------------------
 ! unbindsreleases the statement handle and removes all bindings
 ! ------------------------------------------------------------
-freeHandle             procedure(),sqlReturn,proc,virtual
+freeHandle             procedure(SQLHSTMT hStmt = 0),sqlReturn,proc,virtual
                      end                 
                 
   _EndOfInclude_

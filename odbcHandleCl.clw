@@ -38,7 +38,7 @@ OdbcHandleClType.destruct procedure()
 
 OdbcHandleClType.allocateHandle procedure(SQL_HANDLE_TYPE hType, SQL_HANDLE_TYPE pType) !,sqlReturn,proc
 
-err ODBCErrorClType
+!err ODBCErrorClType
 
 retv   sqlReturn,auto
 
@@ -50,7 +50,7 @@ verId  ulong(SQL_OV_ODBC3_80)
   retv = SQLAllocHandle(hType, pType, self.handle)
   
   if (retv <> Sql_Success) 
-    err.getError(pType, self.handle)
+    !err.getError(pType, self.handle)
   else 
     ! set the version attribute if this is an SQL_HANDLE_ENV  
     if (hType = SQL_HANDLE_ENV) 
@@ -62,6 +62,24 @@ verId  ulong(SQL_OV_ODBC3_80)
 ! end allocateHandle 
 ! ----------------------------------------------------------------------------
   
+OdbcHandleClType.freeHandle procedure(long handleType) !,sqlReturn,proc,virtual,protected
+
+retv   sqlReturn,auto
+
+  code
+  
+  retv = SqlFreeHandle(handleType, self.handle)    
+  
+  if (retv <> Sql_Success) 
+    !self.getError(SQL_HANDLE_STMT, self.hStmt)
+  else 
+    self.handle = SQL_NO_HANDLE
+  end 
+  
+  return retv
+! end freeHandle 
+! ----------------------------------------------------------------------------
+
 OdbcHandleClType.freeHandle procedure() !,sqlReturn,proc
 
 retv   sqlReturn,auto
@@ -89,39 +107,85 @@ OdbcHandleClType.getHandle procedure() !,SQLHANDLE
 ! ----------------------------------------------------------------------------  
 
 ! ------------------------------------------------------------
-! unbinds the columns and the parameters for the statement 
-! handle.  the statment handle at this stime could be reused 
-! if needed/wanted
+! allocates a statment handle for the hDbc input.  
+! use this function if multiple statment handles are needed for 
+! for the connection. 
+! note, the caller must track the handle output and make any 
+! calls to the clear the handle or free the handle.
+! if the hDbc will be closed then the driver 
+! will manage any clean up.
 ! ------------------------------------------------------------
-OdbcStmtHandleClType.freeBindings  procedure() !,sqlReturn,proc,virtual
+OdbcStmtHandleClType.allocateStmtHandle procedure(SQLHDBC hDbc, *SQLHSTMT hStmt) !,sqlReturn,proc
 
 retv   sqlReturn,auto
 
+  code
+  
+  retv = SQLAllocHandle(SQL_HANDLE_STMT, hDbc, hStmt)
+
+  if (retv <> Sql_Success) 
+    hStmt = 0
+  end
+
+  return retv
+
+! ------------------------------------------------------------
+! unbinds the columns and the parameters for the statement 
+! handle.  the statment handle at this stime could be reused 
+! if needed/wanted
+! if the parameter input is the default then the 
+! instance hStmt is used. if not the default the input 
+! hStmt will be used.
+! ------------------------------------------------------------
+OdbcStmtHandleClType.freeBindings  procedure(SQLHSTMT hStmt = 0) !,sqlReturn,proc,virtual
+
+retv       sqlReturn,auto
+tempHandle &SQLHSTMT
+
   code 
    
-  retv = SQLFreeStmt(self.handle, SQL_UNBIND)
-  retv = SQLFreeStmt(self.handle, SQL_RESET_PARAMS)
+  if (hStmt <= 0) 
+    tempHandle &= self.handle
+  else 
+    tempHandle &= hStmt  
+  end 
+
+
+  retv = SQLFreeStmt(tempHandle, SQL_UNBIND)
+  retv = SQLFreeStmt(tempHandle, SQL_RESET_PARAMS)
+  retV = SQLFreeStmt(tempHandle, SQL_CLOSE);  
 
   return retv
 ! ----------------------------------------------------------------------------
 
 ! ------------------------------------------------------------
 ! frees the statement handle 
+! if the parameter input is the default then the 
+! instance hStmt is used. if not the default the input 
+! hStmt will be used.
 ! ------------------------------------------------------------
-OdbcStmtHandleClType.freeHandle procedure() !,sqlReturn,proc,virtual
+OdbcStmtHandleClType.freeHandle procedure(SQLHSTMT hStmt = 0) !,sqlReturn,proc,virtual
 
-retv   sqlReturn,auto
+retv       sqlReturn,auto
+tempHandle &SQLHSTMT
 
   code 
+ 
+  if (hStmt <= 0) 
+    tempHandle &= self.handle
+  else 
+    tempHandle &= hStmt  
+  end 
 
-  if (self.handle = SQL_NO_HANDLE) 
+  if (tempHandle = SQL_NO_HANDLE) 
     return sql_Success
   end
   
-  SQLFreeStmt(self.handle, SQL_CLOSE)
-  self.freeBindings()
-  
-  retv = parent.freeHandle() 
+  self.freeBindings(tempHandle)
+
+  retv = SqlFreeHandle(self.handleType, tempHandle)    
+
+  tempHandle = SQL_NO_HANDLE
 
   return retv  
 ! end freehhandle ----------------------------------------------  
