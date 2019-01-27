@@ -91,7 +91,7 @@ SQL_OV_ODBC3     equate(3)
 
 SQL_C_CHAr       equate(1)
 
-! table type parameter, Server 2008 or better
+! table type parameter, 3.7 and Server 2008 or better
 SQL_SS_TABLE        equate(-153)
 SQL_SOPT_SS_BASE    equate(1225)
 SQL_SOPT_SS_PARAM_FOCUS equate(SQL_SOPT_SS_BASE+11)
@@ -175,6 +175,9 @@ SQL_ASYNC_NOTIFICATION_CAPABLE     equate(1)
 SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE EQUATE(117)
 SQL_ASYNC_DBC_ENABLE_ON      EQUATE(1)
    
+INVALID_SET_FILE_POINTER     ulong(-1)
+MAX_LOG_MESSAGE_LENGTH       equate(255)    
+
 RETCODE    equate(short)
 
 eSizeSReal equate(4)

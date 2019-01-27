@@ -4,3 +4,7 @@ OdbcDemo_Ms.lib
 OdbcDemo_Ms.exe
 OdbcDemo_Ms.MAP
 OdbcDemo_Ms.BKP
+DbcHandle.clw
+handleList.inc
+handleList.clw
+DbcHandle.inc
