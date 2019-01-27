@@ -6,16 +6,16 @@ _ODBCErrorClPresent_   EQUATE(1)
 
   include('odbcTypes.inc'),once
   include('odbcConn.inc'),once
-  include ('svcom.inc'),once
+  include('svcom.inc'),once
 
     
 eLengthSqlState    equate(6)
 eLengthErrText     equate(2000)
   
 OdbcErrorGroup group,type
-sqlState         cstring(eLengthSqlState)
+sqlState         cstring(eLengthSqlState)  ! the state code is a fixed size
 NativeErrorPtr   long
-MessageText      cstring(eLengthErrText)
+MessageText      &cstring                  ! variable length
 textLengthPtr    SQLSMALLINT
                end 
 
@@ -23,9 +23,26 @@ OdbcErrorQueue queue(OdbcErrorGroup)
                end 
                
 ODBCErrorClType class,type,module('odbcErrorCl.clw'),link('odbcErrorCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
+
+! ----------------------------------------------------------------
+! if true then information messages are added to the message q
+! if false they are ignored.  
+! the default is false.  while the info messages are sometimes useful
+! as a general rule they are not needed.
+! ----------------------------------------------------------------
+addInformationMsg bool,private
+
+! ------------------------------------------------
+! queue to hold the error and information messages
+! ------------------------------------------------
 errorMsgQ         &OdbcErrorQueue,private
+
 displayError      bool,private    ! display an error using the message function when it happens
-errorCount        long,private    ! number of error records retruned by the most recent error for the handle type
+
+! ------------------------------------------------
+! number of error records retruned by the most recent error for the handle type
+! ------------------------------------------------
+errorCount        long,private    
 
 ! ----------------------------------------------------------------
 ! setup and clean up
@@ -34,21 +51,27 @@ init              procedure(),sqlReturn
 kill              procedure(),virtual
 destruct          procedure(),virtual
 !
+
+getNumberMsg      procedure(),byte
 ! ----------------------------------------------------------------
-! toggles the flag t oshow the error or notshow the error
+! sets the flag tha tinfcates that information messages from 
+! the ODBC layer should be added to the message q and then displayed.
+! ----------------------------------------------------------------
+setAddInformationMsg procedure(bool onOff)
+
+! ----------------------------------------------------------------
+! toggles the flag to show the error or notshow the error
 ! true the error is displayed when it happens
 ! ----------------------------------------------------------------
 setDisplayError   procedure(bool onOff)
 
-getConnError      procedure(ODBCConnectionClType conn),sqlReturn,proc 
-getEnvError       procedure(ODBCConnectionClType conn),sqlReturn,proc
 getDataBaseError  procedure(ODBCConnectionClType conn),sqlReturn,proc
 
 getError          procedure(SQLSMALLINT HandleType, SQLHANDLE Handle),sqlReturn,proc
-
-! ----------------------------------------------------------------------  
+getErrorGroup     procedure(long ndx, *string stateText, *string msgText)
+!----------------------------------------------------------------------
 ! calls the SQLGetDiagField function to get the number of messages 
-! they maybe error messages or just information messages
+! they may be error messages or just information messages
 ! called internally by the getError function
 ! this call can return other information but they are not currently used
 !
@@ -65,10 +88,19 @@ showError         procedure()
 
 ! ----------------------------------------------------------------------
 ! free the queue of error messages
+! this is called each time the getError function is called.  
+! the messages from the most recent error are deleted, 
 ! ----------------------------------------------------------------------
 freeErrorMsgQ     procedure(),private
 
+! ----------------------------------------------------------------------
+! allocates the message queue 
+! ----------------------------------------------------------------------
 makeObjects       procedure(),sqlReturn,private
+
+! ----------------------------------------------------------------------
+! does the clean up, called by the kill method
+! ----------------------------------------------------------------------
 destroyObjects    procedure(),private
                 end ! class 
 

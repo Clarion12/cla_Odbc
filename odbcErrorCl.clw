@@ -20,6 +20,8 @@ OdbcErrorClType.init procedure() !,sqlReturn
     return sql_error
   end 
   
+  self.setAddInformationMsg(false)
+  
   return sql_Success
 ! end init 
 ! ----------------------------------------------------------------------------
@@ -44,17 +46,14 @@ OdbcErrorClType.destruct procedure()
 ! end destruct 
 ! ----------------------------------------------------------------------------  
   
-OdbcErrorClType.getConnError procedure(ODBCConnectionClType conn) !,sqlReturn,proc
+OdbcErrorClType.setAddInformationMsg procedure(bool onOff)  
+ 
+   code
 
-retv   sqlReturn,auto
+   self.addInformationMsg = onOff
 
-  code 
-
-  !retv = self.getError(SQL_HANDLE_ENV, conn.gethEnv())
-  
-  return retv 
-! end getConnError
-! ----------------------------------------------------------------------------  
+   return
+! end  setAddInformationMsg ---------------------------------------------------
 
 OdbcErrorClType.setDisplayError procedure(bool onOff)
 
@@ -65,18 +64,13 @@ OdbcErrorClType.setDisplayError procedure(bool onOff)
   return
 ! end setDisplayError 
 ! ----------------------------------------------------------------------------  
-   
-OdbcErrorClType.getEnvError procedure(ODBCConnectionClType conn) !,sqlReturn,proc
 
-retv   sqlReturn,auto
+OdbcErrorClType.getNumberMsg  procedure() !,byte
 
   code 
 
-  retv = self.getError(SQL_HANDLE_ENV, conn.gethEnv())
-  
-  return retv 
-! end getDatabaseError
-! ----------------------------------------------------------------------------
+  return self.errorCount
+! end getErrorCount ---------------------------------------------------------
 
 OdbcErrorClType.getDataBaseError procedure(ODBCConnectionClType conn) !,sqlReturn,proc
 
@@ -89,6 +83,23 @@ retv   sqlReturn,auto
   return retv 
 ! end getDatabaseError
 ! ----------------------------------------------------------------------------  
+
+OdbcErrorClType.getErrorGroup  procedure(long ndx, *string stateText, *string msgText)
+
+g    &OdbcErrorGroup
+
+  code
+
+  get(self.errorMsgQ, ndx)
+  !stateText &= new(string(len(self.errorMsgQ.sqlState)))
+  stateText = self.errorMsgQ.sqlState
+ 
+  !msgText &= new(string(len(self.errorMsgQ.messagetext)))
+  msgText = clip(self.errorMsgQ.messagetext)
+
+  
+  return 
+
 
 ! ----------------------------------------------------------------------------  
 ! reads the error and information messages from the list using the 
@@ -131,20 +142,22 @@ tempholder bool
     ! call the function with the errMsg parameter set to null and the call will output the number of bytes 
     ! for the length of the message, allocate and call a second time
     retv = SQLGetDiagRec(handleType, handle, count, stateMsg.getWideStr(), self.errorMsgQ.NativeErrorPtr, errMsg.getWideStr(), 2000, self.errorMsgQ.textLengthPtr)
-    ! if call worked thne from wide string to ansi and place i nthe queue  
+    ! if call worked thne from wide string to ansi and place i nthe queue 
+
     if (retv = sql_Success) or (retv = sql_success_with_info)
       tempholder = outState.Init(stateMsg)
       self.errorMsgQ.sqlState = outState.getCStr()
       tempholder = outErr.Init(errMsg)
+      self.errorMsgQ.MessageText &= new(cstring(tempholder))
       self.errorMsgQ.MessageText = outErr.getCStr()
       add(self.errorMsgQ)
     end  ! if
   end ! loop
 
-  self.displayError = true
+  !self.displayError = true
   
   if (retv = sql_Success) and (self.displayError = true)
-    self.showError()  
+   ! self.showError()  
   end 
 
   return retv
@@ -208,12 +221,25 @@ count     long,auto
   return   
 ! end showError
 ! ----------------------------------------------------------------------
-  
+
+! ----------------------------------------------------------------------
+! free the queue of error messages
+! this is called each time the getError function is called.  
+! the messages from the most recent error are deleted, 
+! ----------------------------------------------------------------------  
 OdbcErrorClType.freeErrorMsgQ procedure() !,private
+
+x  long,auto
 
   code 
 
   self.errorCount = 0  
+
+  loop x = 1 to records(self.errorMsgQ)
+    get(self.errorMsgQ, x)
+    dispose(self.errorMsgQ.MessageText)
+  end  
+
   free(self.errorMsgQ)
   clear(self.errorMsgQ)
   
@@ -221,6 +247,9 @@ OdbcErrorClType.freeErrorMsgQ procedure() !,private
 ! end freeErrorMsgQ
 ! ----------------------------------------------------------------------  
   
+! ----------------------------------------------------------------------
+! allocates the message queue 
+! ----------------------------------------------------------------------  
 OdbcErrorClType.makeObjects procedure() !,sqlReturn,private
 
   code 
@@ -234,6 +263,9 @@ OdbcErrorClType.makeObjects procedure() !,sqlReturn,private
 ! end makeObjects 
 ! -------------------------------------------------------------------------
   
+! ----------------------------------------------------------------------
+! does the clean up, called by the kill method
+! ----------------------------------------------------------------------  
 OdbcErrorClType.destroyObjects procedure() !,sqlReturn,private
 
   code 
@@ -246,4 +278,4 @@ OdbcErrorClType.destroyObjects procedure() !,sqlReturn,private
     
   return
 ! end destroyObjects 
-! -------------------------------------------------------------------------  
+! -------------------------------------------------------------------------
