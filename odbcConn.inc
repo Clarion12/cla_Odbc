@@ -12,27 +12,57 @@ _ODBCConnectionPresent_   EQUATE(1)
   include('odbcConnStrCl.inc'),once
   include('OdbcHandleCl.inc'),once
                        
-  ITEMIZE(0),PRE(Connection)
+  itemize(0),pre(Connection)
 Opened equate
 CallerOpened  equate
 failed equate
   end
   
 ODBCConnectionClType class,type,module('odbcConn.clw'),link('odbcConn.clw',_ABCLinkMode_),dll(_ABCDllMode_)
+
+! ---------------------------------------------------------
+! flag to indicate if the information messagesare displayed
+! default is false, to see the message set the flag to true
+!
+! note, at run time or in production the information messages 
+! are of litte, if any use.  they can be is some cases be helpful
+! during developemnt and testing
+! ---------------------------------------------------------
+informationMessages    bool,private
+
 ! ODBC handles 
 hEnv                   &EnvHandle
-
 hDbc                   &OdbcHandleClType,private ! db connection handle
 hStmt                  &OdbcStmtHandleClType,private! statement handle
-!
+! ------------------------------------------------------
+! instance of the error class for the ODBC messages
+! this is private onject.  there is a function that will
+! allow error class message queue to be queried.
+! ------------------------------------------------------
+errs                   &ODBCErrorClType,private 
+
 connStr                &baseConnStrClType,private ! instance to hold the connection string
+
+! ---------------------------------------------------------
+! sets the value of the memeber InformationMessages
+! true is on, false is off
+! ---------------------------------------------------------
+SetInformationMessages procedure(bool onOff)
+
+! ---------------------------------------------------------
+! gets a refernce to the error class used by this instance
+! the using object will then display the various error or 
+! information messages as needed/wanted.
+! ---------------------------------------------------------
+getErrorRef            procedure(),*ODBCErrorClType
+
 ! -------------------------------------------------------
-! some getters, no setters.  code will need to query these values
-! and use locally, but they will never be modifed
+! some getters, no setters.  code will need to query these 
+! values and use locally, but they will never be modifed
 ! ------------------------------------------------------
 gethDbc                procedure(),SQLHDBC
-gethStmt               procedure(),SQLHStmt
-gethEnv                procedure(),SQLHEnv
+gethStmt               procedure(),SQLHSTMT
+gethEnv                procedure(),SQLHENV
 
 ! ------------------------------------------------------
 ! checks to see if the connection handle input or the 
@@ -60,13 +90,12 @@ Connect                procedure(bool statement = withStatement),sqlReturn
 ! ------------------------------------------------------
 ! disconnect from the database
 ! calls free handle for the connection
-! freeing the hDbc will also free and hStmt on the connection
+! freeing the hDbc will also free and all hStmt on the connection
 ! ------------------------------------------------------
 Disconnect             procedure(),sqlReturn,proc
 
 ! read the errors and show if wanted
-getError               procedure(SQLSMALLINT HandleType, SQLHANDLE Handle),virtual,protected
-getDatabaseError       procedure(),virtual,protected
+getError               procedure(),virtual,protected
 
 ! ------------------------------------------------------
 ! Allocates a statement handle for the connection
@@ -83,7 +112,7 @@ AllocateStmtHandle procedure(*SQLHSTMT hStmt),sqlReturn,protected,virtual
 ! called by the connect function or called 
 ! by the using code to create a statement handle
 ! note, the default is to create a statement handle with the 
-! hDbc, most actions will only need a single sTmt handle 
+! hDbc, most actions will only need a single hStmt handle 
 ! and will close the connection when the action completes.
 ! see the over loaded function if multiple handle are needed.
 ! ------------------------------------------------------
