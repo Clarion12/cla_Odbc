@@ -41,13 +41,6 @@ retv    sqlReturn,auto
     return sql_Error
   end   
   
-  self.errs &= new(ODBCErrorClType)
-  if (self.errs &= null) 
-    return sql_Error
-  else 
-    self.errs.Init()  
-  end 
-
   return Sql_Success
 ! end init
 ! -------------------------------------------------------------------------
@@ -89,40 +82,10 @@ ODBCConnectionClType.kill procedure()
     dispose(self.hStmt)
     self.hStmt &= null
   end
-  
-  if (self.errs &= null) 
-    dispose(self.errs)
-    self.errs &= null
-  end 
 
   return 
 ! end kill 
 ! -------------------------------------------------------------------------  
-
-! ---------------------------------------------------------
-! sets the value of the memeber InformationMessages
-! true is on, false is off
-! ---------------------------------------------------------
-ODBCConnectionClType.SetInformationMessages procedure(bool onOff)
-
-  code 
-
-  self.InformationMessages = onOff
-
-  return
-! end SetInformationMessages -------------------------------------------  
-
-! ---------------------------------------------------------
-! gets a refernce to the error class used by this instance
-! the using object will then display the various error or 
-! information messages as needed/wanted.
-! ---------------------------------------------------------
-ODBCConnectionClType.getErrorRef procedure() !,*ODBCErrorClType
-
-  code 
- 
-  return self.errs
-! end getErrorRef -------------------------------------------------
 
 ODBCConnectionClType.gethEnv procedure() !,SQLHEnv
 
@@ -132,12 +95,14 @@ ODBCConnectionClType.gethEnv procedure() !,SQLHEnv
 
 ODBCConnectionClType.gethDbc procedure() !,SQLHDBC
 
-dbHandle    SQLHDBC(0)
+dbHandle    SQLHDBC,auto
 
   code 
 
   if (~self.hdbc &= null)
     dbHandle = self.hDbc.getHandle()
+  else 
+    dbHandle = SQL_NO_HANDLE  
   end 
   
   return dbHandle
@@ -191,9 +156,6 @@ retv            sqlReturn
   code
 
   retv  = SQLSetEnvAttr(self.gethEnv(), SQL_ATTR_ODBC_VERSION, verId, SQL_IS_INTEGER)
-  if (retv <> Sql_Success) 
-    self.getError()
-  end
 
   return retv
 ! --------------------------------------------------------------------------
@@ -209,9 +171,9 @@ retv            sqlReturn
 ! typically better t ouse the default and just let this block allocate the statement handle
 ! one less step for the using code
 ! --------------------------------------------------------------------------
-ODBCConnectionClType.connect procedure(bool statement = withStatement)
+ODBCConnectionClType.connect procedure()
 
-retv       sqlReturn(SQL_SUCCESS) ! assune success on start so the handle is reused if it has already been allocated 
+retv       sqlReturn,auto
 outLength  sqlsmallint,auto
 
 ! 1,024 is the size shown in the doc's some what arbitray
@@ -219,17 +181,12 @@ outLength  sqlsmallint,auto
 outConnStr cstring(1024)
 
 wideStr    Cwidestr
-! typically the out connection string is not used so we use a null (zero in clarion) 
-! for the input, if you want to see the output uncomment the code that uses this variable 
-! and change the SQLDriverConnect call
-! the output string is interesting but of little use
-!outWideStr Cwidestr
 
   code 
   
   ! if the handle has not been allocated then allocate one
-  ! if it has been allocated then reuse the existing handle
-  if (self.hdbc.getHandle() <= 0)
+  ! if it has been allocated then do not allocate
+  if (self.hdbc.getHandle() = SQL_NO_HANDLE)
     retv = self.hDbc.allocateHandle(SQL_HANDLE_DBC, self.hEnv.getHandle())
   else 
     retv = SQL_SUCCESS
@@ -240,41 +197,9 @@ wideStr    Cwidestr
     if (wideStr.init(self.connStr.ConnectionString()) = false) 
       return sql_Error
     end
- 
-    ! make the output connection string a wide string 
-    !outConnStr = all(' ')
-    !if (outWideStr.Init(outConnStr) = false) 
-     ! return sql_Error
-    !end
-    !retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, outWideStr.GetWideStr(), size(outConnStr), outLength, SQL_DRIVER_NOPROMPT)
-    retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, 0, size(outConnStr), outLength, SQL_DRIVER_NOPROMPT)
-
-    ! ---------------------------------------------------
-    ! this call always returns SQL_SUCCESS_WITH_INFO
-    ! if the information messages are on (true) then get them
-    ! ---------------------------------------------------
-    if (retv = Sql_Success_With_Info)
-      if (self.InformationMessages = true) 
-        self.getError()    
-      end
-    end  
+     retv = SQLDriverConnect(self.hDbc.getHandle(), eNoWindow, widestr.GetWideStr(), SQL_NTS, 0, size(outConnStr), outLength, SQL_DRIVER_NOPROMPT)
   end   
 
-  ! check for a good return value, if not valid then get the errors 
-  if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
-    self.getError()
-  else 
-    ! allocate the statement handle if needed/wanted
-    if (statement = true)     
-      retv = self.AllocateStmtHandle()
-    end   
-  end
- 
-  if (retv = Sql_Success_With_Info) 
-   ! reset for the caller
-    retv = sql_Success
-  end   
-  
   return retv 
 ! end connect 
 ! ----------------------------------------------------------------------
@@ -295,9 +220,6 @@ retv sqlReturn,auto
   code
 
   retv = self.hStmt.AllocateHandle(SQL_HANDLE_STMT, self.hDbc.getHandle())
-  if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
-    self.getError()
-  end   
 
   return retv
 ! end  AllocateStmtHandle ----------------------------------------------
@@ -318,7 +240,6 @@ retv sqlReturn,auto
 
   retv = self.hStmt.AllocateHandle(self.hDbc.getHandle(), hStmt)
   if (retv <> sql_Success) and (retv <> Sql_Success_With_Info)
-    self.getError()
     hStmt = SQL_NO_HANDLE
   end   
 
@@ -380,30 +301,10 @@ h         SQLHDBC,auto
   h = self.hDbc.getHandle()
   if (h > 0)
     retv = SQLDisconnect(h)
-    ! errors here will typiclaly be about closeing a connection while some work 
-    ! is still in ptogress
-    if (retv <> sql_Success) and (retv <> sql_Success_With_Info)
-      self.getError()
-    end
-    ! 'don't care about info messages here
-    if (retv = sql_Success_With_Info)
-      ! if with info reset for the caller
-      retv = sql_Success  
-    end
   end 
 
   return retv
 ! end Disconnect 
-! ----------------------------------------------------------------------
-
-ODBCConnectionClType.getError procedure()  
-
-  code 
-  
-  self.errs.getError(SQL_HANDLE_DBC, self.gethDbc())
-      
-  return 
-! end getError 
 ! ----------------------------------------------------------------------
 
 ODBCConnectionClType.asyncOn procedure()
