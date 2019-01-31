@@ -20,8 +20,6 @@ OdbcErrorClType.init procedure() !,sqlReturn
     return sql_error
   end 
   
-  self.setAddInformationMsg(false)
-  
   return sql_Success
 ! end init 
 ! ----------------------------------------------------------------------------
@@ -46,25 +44,6 @@ OdbcErrorClType.destruct procedure()
 ! end destruct 
 ! ----------------------------------------------------------------------------  
   
-OdbcErrorClType.setAddInformationMsg procedure(bool onOff)  
- 
-   code
-
-   self.addInformationMsg = onOff
-
-   return
-! end  setAddInformationMsg ---------------------------------------------------
-
-OdbcErrorClType.setDisplayError procedure(bool onOff)
-
-  code 
-  
-  self.displayError = onOff
-  
-  return
-! end setDisplayError 
-! ----------------------------------------------------------------------------  
-
 OdbcErrorClType.getNumberMsg  procedure() !,byte
 
   code 
@@ -86,20 +65,19 @@ retv   sqlReturn,auto
 
 OdbcErrorClType.getErrorGroup  procedure(long ndx, *string stateText, *string msgText)
 
-g    &OdbcErrorGroup
-
   code
 
   get(self.errorMsgQ, ndx)
-  !stateText &= new(string(len(self.errorMsgQ.sqlState)))
-  stateText = self.errorMsgQ.sqlState
- 
-  !msgText &= new(string(len(self.errorMsgQ.messagetext)))
-  msgText = clip(self.errorMsgQ.messagetext)
-
+  if (errorcode() = 0)
+    stateText = self.errorMsgQ.sqlState
+    msgText = self.errorMsgQ.messagetext
+  else 
+    stateText = '01000'
+    msgText = 'No Message'
+  end   
   
   return 
-
+! end getErrorGroup ----------------------------------------------------------
 
 ! ----------------------------------------------------------------------------  
 ! reads the error and information messages from the list using the 
@@ -112,7 +90,7 @@ g    &OdbcErrorGroup
 OdbcErrorClType.getError procedure(SQLSMALLINT HandleType, SQLHANDLE Handle)  
 
 retv      sqlReturn,auto
-errCount  long,auto
+
 count     long,auto
 
 ! function inputs
@@ -154,13 +132,7 @@ tempholder bool
     end  ! if
   end ! loop
 
-  !self.displayError = true
-  
-  if (retv = sql_Success) and (self.displayError = true)
-   ! self.showError()  
-  end 
-
-  return retv
+  return self.errorCount
 ! end getError
 ! ----------------------------------------------------------------------
   
@@ -233,7 +205,7 @@ x  long,auto
 
   code 
 
-  self.errorCount = 0  
+  self.errorCount = 0
 
   loop x = 1 to records(self.errorMsgQ)
     get(self.errorMsgQ, x)

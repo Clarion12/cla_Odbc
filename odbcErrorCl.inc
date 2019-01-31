@@ -24,18 +24,10 @@ OdbcErrorQueue queue(OdbcErrorGroup)
                
 ODBCErrorClType class,type,module('odbcErrorCl.clw'),link('odbcErrorCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 
-! ----------------------------------------------------------------
-! if true then information messages are added to the message q
-! if false they are ignored.  
-! the default is false.  while the info messages are sometimes useful
-! as a general rule they are not needed.
-! ----------------------------------------------------------------
-addInformationMsg bool,private
-
 ! ------------------------------------------------
 ! queue to hold the error and information messages
 ! ------------------------------------------------
-errorMsgQ         &OdbcErrorQueue,private
+errorMsgQ         &OdbcErrorQueue
 
 displayError      bool,private    ! display an error using the message function when it happens
 
@@ -47,27 +39,16 @@ errorCount        long,private
 ! ----------------------------------------------------------------
 ! setup and clean up
 ! ----------------------------------------------------------------
-init              procedure(),sqlReturn
+init              procedure(),sqlReturn,proc
 kill              procedure(),virtual
 destruct          procedure(),virtual
 !
 
 getNumberMsg      procedure(),byte
-! ----------------------------------------------------------------
-! sets the flag tha tinfcates that information messages from 
-! the ODBC layer should be added to the message q and then displayed.
-! ----------------------------------------------------------------
-setAddInformationMsg procedure(bool onOff)
-
-! ----------------------------------------------------------------
-! toggles the flag to show the error or notshow the error
-! true the error is displayed when it happens
-! ----------------------------------------------------------------
-setDisplayError   procedure(bool onOff)
 
 getDataBaseError  procedure(ODBCConnectionClType conn),sqlReturn,proc
 
-getError          procedure(SQLSMALLINT HandleType, SQLHANDLE Handle),sqlReturn,proc
+getError          procedure(SQLSMALLINT HandleType, SQLHANDLE Handle),byte,proc
 getErrorGroup     procedure(long ndx, *string stateText, *string msgText)
 !----------------------------------------------------------------------
 ! calls the SQLGetDiagField function to get the number of messages 
