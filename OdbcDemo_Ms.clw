@@ -6,7 +6,7 @@
    include('odbcColumnsCl.inc'),once
    include('odbcParamsCl.inc'),once
    include('odbcSqlStrCl.inc'),once
-   include('odbcCl.inc'),once
+   include('odbcExecCl.inc'),once
    include('odbcTypes.inc'),once
    include('dynStr.inc'),once
    

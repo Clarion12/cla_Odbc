@@ -150,7 +150,9 @@ tempHandle &SQLHSTMT
     tempHandle &= hStmt  
   end 
 
-
+  ! these will not fail, and not sure what to if they do fail
+  ! I suppose they could be called on an invalid handle but then 
+  ! no harm is actually done.
   retv = SQLFreeStmt(tempHandle, SQL_UNBIND)
   retv = SQLFreeStmt(tempHandle, SQL_RESET_PARAMS)
   retV = SQLFreeStmt(tempHandle, SQL_CLOSE);  

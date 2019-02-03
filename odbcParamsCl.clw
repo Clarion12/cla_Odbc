@@ -129,10 +129,6 @@ numberBytes long,auto   ! returned number of bytes
 
   code 
 
-  if (self.setupFailed = true) 
-    return sql_error
-  end   
-  
   ! once for each parameter
   loop count = 1 to records(self.paramQ)
     get(self.paramQ, count)
@@ -144,11 +140,6 @@ numberBytes long,auto   ! returned number of bytes
       break
     end  
   end    
-
-  ! reset for the caller
-  if (retv = Sql_Success_with_info)
-    retv = Sql_Success
-  end
 
   return retv
 ! end bindParameters 
@@ -502,6 +493,30 @@ retv sqlReturn
 ! ------------------------------------------------------------------------------------
 ! add the various output parameters
 ! ------------------------------------------------------------------------------------
+ParametersClass.AddOutParameter procedure(*byte varPtr) !,sqlReturn,proc
+
+retv   sqlReturn,auto
+
+  code
+ 
+  retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_TINYINT, SQL_TINYINT, eSizeLong, 0, address(varPtr), eSizeLong)
+
+  return retv
+! end AddOutParameter
+! --------------------------------------------------------------------------------
+
+ParametersClass.AddOutParameter procedure(*short varPtr) !,sqlReturn,proc
+
+retv   sqlReturn,auto
+
+  code
+ 
+  retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_SHORT, SQL_SMALLINT, eSizeLong, 0, address(varPtr), eSizeLong)
+
+  return retv
+! end AddOutParameter
+! --------------------------------------------------------------------------------
+
 ParametersClass.AddOutParameter procedure(*long varPtr) !,sqlReturn,proc
 
 retv   sqlReturn,auto
@@ -521,6 +536,18 @@ retv   sqlReturn,auto
   code
  
   retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_CHAR, SQL_CHAR, size(varPtr), 0, address(varPtr), size(varPtr))
+
+  return retv
+! end AddOutParameter
+! --------------------------------------------------------------------------------
+
+ParametersClass.AddOutParameter procedure(*sreal varPtr) !,sqlReturn,proc
+
+retv   sqlReturn,auto
+
+  code
+ 
+  retv = self.addParameter(SQL_PARAM_OUTPUT, SQL_C_FLOAT, SQL_REAL, eSizeReal, 0, address(varPtr), eSizeReal)
 
   return retv
 ! end AddOutParameter

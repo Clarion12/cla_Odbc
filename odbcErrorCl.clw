@@ -126,7 +126,7 @@ tempholder bool
       tempholder = outState.Init(stateMsg)
       self.errorMsgQ.sqlState = outState.getCStr()
       tempholder = outErr.Init(errMsg)
-      self.errorMsgQ.MessageText &= new(cstring(tempholder))
+      self.errorMsgQ.MessageText &= new(cstring(tempholder + 2))
       self.errorMsgQ.MessageText = outErr.getCStr()
       add(self.errorMsgQ)
     end  ! if

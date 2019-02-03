@@ -184,7 +184,7 @@ MSConnStrClType.Init procedure(string fullConnStr) !,virtual
 
   self.parseConnStr(fullConnStr)
 
-  critSection.releae()
+  critSection.release()
 
   return level:benign
 ! ------------------------------------------------------------------------------
@@ -435,7 +435,7 @@ x          long,auto
     startPos = instring('=', labels.label)
     ! if equal sign is missing, skip this one, it cannot be valid
     if (startPos <= 0) 
-      continue
+      cycle
     end  
     case sub(labels.label, 1, startPos - 1) 
     of 'driver'

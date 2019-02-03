@@ -190,9 +190,12 @@ AddCStringArray procedure(long array, long elementSize),sqlReturn,proc
 ! ----------------------------------------------------------------
 ! add the output types 
 ! ----------------------------------------------------------------
+AddOutParameter procedure(*byte varPtr),sqlReturn,proc
+AddOutParameter procedure(*short varPtr),sqlReturn,proc
 AddOutParameter procedure(*long varPtr),sqlReturn,proc
 AddOutParameter procedure(*cstring varPtr),sqlReturn,proc
 AddOutParameter procedure(*real varPtr),sqlReturn,proc
+AddOutParameter procedure(*sreal varPtr),sqlReturn,proc
 
 ! --------------------------------------------------------------------------------
 ! worker function called by the sql string object to add the place holders to a 

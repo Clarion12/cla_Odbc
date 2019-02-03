@@ -24,8 +24,7 @@ handleCount       long
 
 ! file managers may be threaded and we don't 
 ! want different threads in the code 
-critSection       &CriticalSection
-
+critSection       CriticalSection
 ! --------------------------------------------------
 ! allocates the env handle using the module level variable
 ! and sets the class properties to use that handle value and
@@ -35,11 +34,6 @@ EnvHandle.construct  procedure()
 
   code
   
-  ! if null then make one
-  if (critSection &= null)
-    critSection &= new(CriticalSection) 
-  end
-    
   critSection.wait()
 
   self.handle &= EnvironmentHandle  
@@ -49,7 +43,7 @@ EnvHandle.construct  procedure()
   if (self.allocateHandle() = SQL_SUCCESS) 
     self.refCount += 1
   end
-
+  
   critSection.release()
 
   return

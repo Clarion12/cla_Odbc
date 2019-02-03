@@ -8,3 +8,5 @@ DbcHandle.clw
 handleList.inc
 handleList.clw
 DbcHandle.inc
+odbcColsCl.inc
+odbcColsCl.clw

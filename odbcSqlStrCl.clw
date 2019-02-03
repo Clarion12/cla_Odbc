@@ -105,16 +105,8 @@ retv   long
   code 
   
   self.paramMarker = instring(eParamIdChar, workStr, 1, self.paramMarker + 1)
-
   if (self.paramMarker > 0)
     self.paramCount += 1    
-    if (self.findEnd(workstr) = sql_Success)
-      if (params.findByParamName(sub(workStr, self.paramMarker, self.endParam - self.paramMarker)) = sql_Error)
-        self.paramCount = 0
-      end   
-    else 
-      self.paramCount = 0    
-    end   
     if (self.paramCount > 0) 
       memmove(address(workstr) + self.paramMarker, address(workstr) + self.endParam - 1, strlen(address(workstr[self.endParam])) + 1)
       workstr[self.paramMarker] = eOdbcParamIdChar
