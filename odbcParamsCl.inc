@@ -31,6 +31,7 @@ ParametersClass class,type,module('odbcParamsCl.clw'),link('odbcParamsCl.clw',_A
 setupFailed           bool,private
 paramQ                &ParametersQueue
 
+alreadyBound          bool !,private
 ! ---------------------------------------------------------------------------
 ! default constructor for the parameters
 ! ---------------------------------------------------------------------------
@@ -51,6 +52,7 @@ kill procedure()
 ! ---------------------------------------------------------------------------        
 destruct procedure(),virtual
 
+AlreadyBound procedure(),bool
 ! ---------------------------------------------------------------------------------
 ! free the queue of parameters, this does not remove the bindings, if any
 ! ---------------------------------------------------------------------------------

@@ -84,6 +84,12 @@ ParametersClass.destruct procedure()
 ! destruct 
 ! -----------------------------------------------------------------------------
 
+ParametersClass.AlreadyBound procedure()
+
+  code
+
+  return self.alreadyBound
+
 ! ---------------------------------------------------------------------------------
 ! free the queue of parameters, this does not remove the bindings, if any
 ! ---------------------------------------------------------------------------------
@@ -91,10 +97,9 @@ ParametersClass.clearQ procedure()
 
   code 
   
-  if (self.setupFailed = false)
-    free(self.paramQ)
-  end
-
+  free(self.paramQ)
+  self.alreadyBound = false
+ 
   return
 ! end clear
 ! ---------------------------------------------------------------------------------
@@ -128,6 +133,8 @@ wideStr     CWideStr    ! used to convert the ansi string to a wide string
 numberBytes long,auto   ! returned number of bytes
 
   code 
+
+  self.alreadyBound = true
 
   ! once for each parameter
   loop count = 1 to records(self.paramQ)
