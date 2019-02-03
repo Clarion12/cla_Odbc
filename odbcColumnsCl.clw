@@ -291,7 +291,7 @@ columnsClass.AddColumn procedure(SQLSMALLINT TargetType, SQLPOINTER TargetValueP
 
 ! ------------------------------------------------------------------------------
 ! sets the default value for the queue elment if the read returns a null from the 
-! database.  Most columns will not be null but null's must be handled in a resonale manner
+! database.  Most columns will not be null but null's must be handled some way
 ! ------------------------------------------------------------------------------
 columnsCLass.setDefaultNullValue procedure(*queue q) 
 
@@ -314,7 +314,9 @@ v  any
 ! assigns the default value for a type to the buffer field when the back end 
 ! is a null.  
 ! -----------------------------------------------------------------------------
-columnsClass.AssignDefaultValue(*queue q) !,virtual,protected
+columnsClass.AssignDefaultValue procedure(*queue q) !,virtual,protected
+
+v    any
 
   code 
 

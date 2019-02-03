@@ -43,14 +43,30 @@ ActualQuePos   long           ! more for the UI than the column, sets the actual
 ! a queue, a group, an individual field, ...
 ! --------------------------------------------------------------------  
 columnsClass class,type,module('odbcColumnsCl.clw'),link('odbcColumnsCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
+
+! ---------------------------------------------------------------------------
 ! queue of the columns that will be used by the database call
+! ---------------------------------------------------------------------------
 colQ           &ColumnsQueue,private
+
+! ---------------------------------------------------------------------------
 ! array of long for use by the bind column call
 ! this is used for the nullvalues on the back end
 ! and if the column is null it will be set to SQL_NULL_DATA
+! ---------------------------------------------------------------------------
 ArrayPtr       long,dim(numberCols)
+
+! ---------------------------------------------------------------------------
 ! indicaates that at least one column in the result set allows null values
 AllowNulls     bool,private
+! ---------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------
+! flag indicates this set has a large column, character or binary
+! the type will be found in the column type field
+! ---------------------------------------------------------------------------
+hasLargeColumn  bool,private
+
 ! ---------------------------------------------------------------------------
 !  default constructor, calls the init function for the set up
 ! ---------------------------------------------------------------------------
@@ -143,7 +159,7 @@ AddColumn procedure(*decimal colPtr, bool allowNulls = false, long actualQueuePo
 !
 ! --------------------------------------------------
 ! boolean type, this is actually long in Clarion 
-! and useing bool as the parameter type cause compiler issues.
+! and using bool as the parameter type causes compiler issues.
 ! --------------------------------------------------
 AddBooleanColumn procedure(*bool colPtr, bool allowNulls = false, long actualQueuePos = -1)
 !
@@ -174,7 +190,7 @@ setDefaultNullValue procedure(*queue q)
 ! assigns the default value for a type to the buffer field when the back end 
 ! is a null.  
 ! -----------------------------------------------------------------------------
-AssignDefaultValue(*queue q),virtual,protected
+AssignDefaultValue procedure(*queue q),virtual,protected
 
 ! ------------------------------------------------------------------------------
 ! returns the value of the instances allowNulls member. 
