@@ -9,13 +9,13 @@
 ! ----------------------------------------------------------------------
 ! initilizes the object 
 ! ----------------------------------------------------------------------
-odbcCallType.init procedure()   
+odbcCallType.init procedure(*ODBCErrorClType e)   
 
 retv     byte(level:benign)
 
   code 
   
-  retv = parent.init()
+  retv = parent.init(e)
      
   return retv 
 ! end Init
@@ -79,11 +79,7 @@ retv     sqlReturn,auto
 
   code
 
-  retv = self.executeStatement(hStmt, sqlCode)
-  
-  if (retv <> Sql_Success) and (retv <> Sql_Success_with_info)
-    self.getError(hStmt)
-  end
+  retv = self.executeDirect(hStmt, sqlCode)
       
   return retv
 ! end execSp
@@ -104,9 +100,7 @@ retv    sqlReturn
     return sql_Error
   end 
   
-  if (retv = sql_Success) 
-    retv = self.execSp(hStmt, self.sqlStr.sqlStr)
-  end  
+  retv = self.execSp(hStmt, self.sqlStr.sqlStr)
 
   return retv 
 ! end execSp
@@ -156,10 +150,14 @@ retv    sqlReturn
   end 
   
   retv = self.execSp(hStmt, self.sqlStr.sqlStr)
-  if (retv = sql_Success)
+  if (retv = sql_Success) or (retv = Sql_Success_with_info)
     retv = self.fillResult(hStmt, cols, q)
   end   
   
+  if (retv <> Sql_Success) and (retv <> Sql_Success_with_info)
+    self.getError(hStmt)
+  end
+
   return retv
 ! end execSp
 ! ----------------------------------------------------------------------
@@ -182,10 +180,13 @@ retv    sqlReturn
     
   retv = params.bindParameters(hStmt)
     
-  if (retv = sql_Success) 
+  if (retv = sql_Success) or (retv = Sql_Success_with_info)
     retv = self.execSp(hStmt, self.sqlStr.sqlStr)
-    if (retv = sql_Success) 
+    if (retv = sql_Success) or (retv = Sql_Success_with_info)
       retv = self.fillResult(hStmt, cols, q)
+      if (retv <> Sql_Success) and (retv <> Sql_Success_with_info)
+        self.getError(hStmt)
+      end
     end   
   end  
 
@@ -206,7 +207,7 @@ retv    sqlReturn
     
   retv = params.bindParameters(hStmt)
     
-  if (retv = sql_Success) 
+  if (retv = sql_Success) or (retv = Sql_Success_with_info)
     retv = self.execSp(hStmt, self.sqlStr.sqlStr)
   end  
 

@@ -28,7 +28,7 @@ odbcCallType class(odbcBaseClType),type,module('odbcCall.clw'),link('odbcCall.cl
 ! ----------------------------------------------------------------------
 ! initilizes the object 
 ! ----------------------------------------------------------------------
-init             procedure(),byte,proc
+init             procedure(*ODBCErrorClType e),byte,proc
 
 ! ----------------------------------------------------------------------
 ! does any needed clean up and calls the parent kill

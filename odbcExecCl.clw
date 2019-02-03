@@ -2,7 +2,7 @@
 
   member()
   
-  include('odbcCl.inc'),once
+  include('odbcExecCl.inc'),once
   include('odbcSqlStrCl.inc'),once
 
   map 
@@ -13,14 +13,14 @@
 ! sets up the instance for use.  assigns the connection object input to the 
 ! data member.  allocates and init's the class to handle the sql statment or string. 
 ! ---------------------------------------------------------------------------  
-odbcExecType.init procedure()   
+odbcExecType.init procedure(*ODBCErrorClType e)   
 
 retv     byte(level:benign)
 
   code 
   
-  retv = parent.init()
-     
+  retv = parent.init(e)
+
   return retv 
 ! end Init
 ! ----------------------------------------------------------------------
@@ -58,12 +58,11 @@ odbcExecType.formatRow procedure() !,virtual
 ! ----------------------------------------------------------------------
 odbcExecType.execQuery procedure(SQLHSTMT hStmt, *IDynStr sqlCode) !,sqlReturn,virtual
 
-res     long,auto   ! used t oavoid function call warnings
 retv    sqlReturn,auto
 
   code 
   
-  retv = self.executeStatement(hStmt, sqlCode)
+  retv = self.executeDirect(hStmt, sqlCode)
 
   return retv
 ! --------------------------------------------------------------------
@@ -71,8 +70,7 @@ retv    sqlReturn,auto
 ! ------------------------------------------------------------------------------
 ! execQuery
 ! execute a query that returns a result set.  
-! prep the statement, execute the statement
-! then fill the queue or buffers and close the connection when done
+! execute the statement then fill the queue or buffers
 !
 ! this method does not accept the parameters class instance so use this one for queries that 
 ! do not have parameters.
@@ -83,7 +81,7 @@ retv    sqlReturn,auto
 
   code 
   
-  retv = self.execQuery(hStmt, sqlCode)
+  retv = self.executeDirect(hStmt, sqlCode)
 
   ! fill the queue
   if (retv = sql_Success) or (retv = SQL_SUCCESS_WITH_INFO)
@@ -106,30 +104,20 @@ retv    sqlReturn,auto
   code 
 
   retv = params.bindParameters(hStmt)
+  case retv 
+    of SQL_SUCCESS 
+      retv = self.execQuery(hStmt, sqlCode)
+    of SQL_SUCCESS_WITH_INFO 
+      self.getError(hStmt)
+      retv = self.execQuery(hStmt, sqlCode)
+    else 
+      self.getError(hStmt)  
+  end ! case 
 
-  retv = self.execQuery(hStmt, sqlCode)
-  
   ! fill the queue
   if (retv = sql_Success) or (retv = SQL_SUCCESS_WITH_INFO)
     retv = self.fillResult(hStmt, cols, q)
   end   
-  
-  return retv 
-! end execQuery
-! ----------------------------------------------------------------------
-
-! ------------------------------------------------------------------------------
-! execQuery
-! execute a query that does not return a result set.  
-! but has at least one output parameter
-! ------------------------------------------------------------------------------      
-odbcExecType.execQueryOut procedure(SQLHSTMT hStmt, *IDynStr sqlCode, *ParametersClass params) !,sqlReturn,virtual
-
-retv    sqlReturn,auto
-
-  code 
-  
-  retv = self.execQuery(hStmt, sqlCode, params)
   
   return retv 
 ! end execQuery
@@ -147,6 +135,7 @@ retv  sqlReturn,auto
   code
 
   retv = params.bindParameters(hStmt)
+
   if (retv = sql_Success) or (retv = SQL_SUCCESS_WITH_INFO)
     retv = self.execQuery(hStmt, sqlCode)
   end  

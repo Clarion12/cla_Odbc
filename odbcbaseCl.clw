@@ -16,10 +16,11 @@
 
 ! ---------------------------------------------------------------------------
 ! Init 
-! sets up the instance for use.  assigns the connection object input to the 
-! data member.  allocates and init's the class to handle the sql statment or string. 
+! sets up the instance for use.  
+!  allocates and init's the class to handle the sql statement or string. 
+!  alllocates the error class used t oread the error message from the driver
 ! ---------------------------------------------------------------------------  
-odbcBaseClType.init procedure()   
+odbcBaseClType.init procedure(*ODBCErrorClType e)   
 
 retv     byte(level:benign)
 
@@ -32,12 +33,7 @@ retv     byte(level:benign)
     self.sqlStr.init()
   end  
      
-  self.errs &= new(ODBCErrorClType)
-  if (self.errs &= null) 
-    return sql_Error
-  else 
-    self.errs.Init()  
-  end 
+  self.errs &= e
 
   return retv 
 ! end Init
@@ -55,11 +51,6 @@ odbcBaseClType.kill procedure() !,virtual
     self.sqlStr &= null
   end  
   
-  if (~self.errs &= null) 
-    dispose(self.errs)
-    self.errs &= null
-  end 
-
   return
 ! end kill
 ! ----------------------------------------------------------------------
@@ -116,25 +107,6 @@ odbcBaseClType.formatRow procedure() !,virtual
 ! ----------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------
-! Local worker function to assign the sql str (the actual sql statement) used in this 
-! call to the class member
-! -----------------------------------------------------------------------------  
-odbcBaseClType.setSqlCommand procedure(*IdynStr s) ! sqlReturn,protected
-
-  code 
-  
-  ! make sure there is one
-  if (s &= null) or (s.strLen() = 0)
-    return sql_Error
-  end 
-  
-  self.sqlStr.init(s)
-
-  return sql_Success
-! end setSqlCommand
-! ----------------------------------------------------------------------  
-
-! -----------------------------------------------------------------------------
 ! Local worker overloaded function to assign the sql str (the actual sql statement) used in this 
 ! call to the class member
 ! -----------------------------------------------------------------------------  
@@ -165,12 +137,18 @@ res  sqlReturn,auto
   code 
  
   res = SQLMoreResults(hStmt) 
-  if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO)
-    self.getError(hStmt)
-    retv = false;
-  else   
-    retv = true
-  end 
+  case res 
+    ! only two info messages and they will seldom happen,
+    ! but read the meesage if it does happen
+    of SQL_SUCCESS_WITH_INFO
+      self.getError(hStmt)
+      retv = true
+    of sql_success
+      retv = true
+    else   
+      self.getError(hStmt)
+      retv = false;
+  end
    
   return retv;
 ! ------------------------------------------------------------------------------
@@ -196,19 +174,22 @@ retv   sqlReturn,auto
 ! ----------------------------------------------------------------------
 ! execute a query that does not return a result set and does not use any 
 ! parameters
+! converts the string input to a wide string and thne calls execute direct
 ! ----------------------------------------------------------------------
-odbcBaseClType.executeStatement procedure(SQLHSTMT hStmt, *IDynStr sqlCode) !,sqlReturn,virtual
+odbcBaseClType.executeDirect procedure(SQLHSTMT hStmt, *IDynStr sqlCode) !,sqlReturn,virtual
 
-res     long,auto   ! used to avoid function call warnings
 retv    sqlReturn,auto
 wideStr CWideStr
 
   code 
-  
-  res = wideStr.Init(sqlCode.Cstr())
+
+  if (wideStr.init(sqlCode.cstr()) <= 0)
+    return sql_Error
+  end 
 
   retv = SQLExecDirect(hStmt, wideStr.GetWideStr(), SQL_NTS)
-  if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO)
+  ! store any error or infomration messages
+  if (retv <> SQL_SUCCESS)
     self.getError(hStmt)
   end 
 
@@ -225,10 +206,11 @@ retv   sqlReturn,auto
   code 
   
   retv = SQLFetch(hStmt)
-  if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO)
+  ! store any error or infomration messages
+  if (retv <> SQL_SUCCESS)
     self.getError(hStmt)
   end 
-   
+
   return retv
 ! end fetch
 ! -----------------------------------------------------------------------------
@@ -257,7 +239,11 @@ retv   sqlReturn,auto
       retv = Sql_Success    
       break
     of Sql_Success
-    orof Sql_Success_with_info
+      ! format the queue elements for display, if needed, and add the element to the queue
+      self.formatRow()
+      add(q)
+    of Sql_Success_with_info
+      self.getError(hStmt)
       ! format the queue elements for display, if needed, and add the element to the queue
       self.formatRow()
       add(q)
@@ -265,15 +251,11 @@ retv   sqlReturn,auto
       ! dump the queue, something went wrong and 
       ! the code should not return a partial result set
       free(q)
+      self.getError(hStmt)
       break    
     end  ! case
   end ! loop
-  
-  if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO) and (retv <> SQL_NO_DATA)
-    self.getError(hStmt)
-  end 
-
-   
+ 
   return retv
 ! end fetch
 ! -----------------------------------------------------------------------------
@@ -285,10 +267,6 @@ allowNulls   bool,auto
 
   code 
   
-  ! start loop and keep looping until an error or no_data is returned  
-  
-  allowNulls = cols.getallowNulls()
-  
   loop
     retv = SQLFetch(hStmt)
     case retv 
@@ -298,25 +276,19 @@ allowNulls   bool,auto
       retv = Sql_Success    
       break
     of Sql_Success
-    orof Sql_Success_with_info
-      if (allowNulls = true)
-        cols.setDefaultNullValue(q)
-      end
-      ! format the queue elements for display, if needed, and add the element to the queue
-      self.formatRow()
-      add(q)
+      self.ProcessRead(q, cols)
+    of Sql_Success_with_info
+      self.getError(hStmt)  
+      self.ProcessRead(q, cols)
     else 
       ! dump the queue, something went wrong and 
       ! the code should not return a partial result set
       free(q)
+      self.getError(hStmt)
       break    
     end  ! case
   end ! loop
   
-  if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO) and (retv <> SQL_NO_DATA)
-    self.getError(hStmt)
-  end 
-   
   return retv
 ! end fetch
 ! -----------------------------------------------------------------------------
@@ -334,27 +306,40 @@ retv   sqlReturn,auto
   ! bind the columns just before the fetch, not needed for the execute query calls 
   ! so do it here, 
   retv = cols.bindColumns(Hstmt)
-
-  ! if ok then go fetch the result
-  if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO)
-    self.getError(hStmt)
-  else    
-    retv = self.fetch(hStmt, q, cols)
-    if (retv <> sql_success) and (retv <> SQL_SUCCESS_WITH_INFO)
+  case retv 
+    of Sql_Success 
+      retv = self.fetch(hStmt, q, cols)
+    of SQL_SUCCESS_WITH_INFO
+      ! bind columns returned with an info message
       self.getError(hStmt)
-    end
+      retv = self.fetch(hStmt, q, cols)
+    else 
+      ! we went south 
+      self.getError(hStmt)
   end  
 
   return retv
 ! end fillResult
 ! -----------------------------------------------------------------------------
 
+odbcBaseClType.ProcessRead procedure(*queue q, *columnsClass cols) ! virtual,protected
+
+  code
+
+  if (cols.getallowNulls() = true)
+    cols.setDefaultNullValue(q)
+  end
+  ! format the queue elements for display, if needed, and add the element to the queue
+  self.formatRow()
+  add(q)
+
+  return
+! end ProcessRead ------------------------------------------------------------
+
 ! -----------------------------------------------------------------------------
 ! call the error class to read the error information
 ! -----------------------------------------------------------------------------
 odbcBaseClType.getError procedure(SQLHSTMT hStmt)  ! protected
-
-retv   sqlReturn,auto
 
   code 
   

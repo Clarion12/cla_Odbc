@@ -12,10 +12,16 @@ _ODBCBaseClassPresent_   EQUATE(1)
 
 odbcBaseClType class,type,module('odbcBaseCl.clw'),link('odbcbaseCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 
+! -----------------------------------------------------------
+! string class is used to build the calls to tstored procedures 
+! and scalar functions.  adds the {call ...} and adds the palces 
+! holders for each parameter 
+! not used when executing a query
+! -----------------------------------------------------------
 sqlStr           &sqlStrClType
 
 ! set up and tear down
-init             procedure(),byte,proc
+init             procedure(*ODBCErrorClType e),byte,proc
 kill             procedure(),virtual
 destruct         procedure(),virtual
 
@@ -37,17 +43,11 @@ errs                   &ODBCErrorClType,private
 unBindColums     procedure(SQLHSTMT hStmt)  
 
 formatRow        procedure(),virtual  
-! -----------------------------------------------------------------------------
-! worker function to assign the sql str (the actual sql statement) used in this 
-! call to the class member, the IDynStr is typically used by the various execute
-! calls
-! -----------------------------------------------------------------------------  
-setSqlCommand    procedure(*IdynStr s),sqlReturn,protected
 
 ! -----------------------------------------------------------------------------
 ! worker function to assign the sql str (the actual sql statement) used in this 
 ! call to the class member, the string parameter is typically used by the various
-! execute calls to stored procedures
+! calls to stored procedures
 ! -----------------------------------------------------------------------------  
 setSqlCommand    procedure(string s),sqlReturn,protected
 
@@ -62,7 +62,7 @@ nextResultSet    procedure(SQLHSTMT hStmt),bool
 ! ------------------------------------------------------------------------------
 readnextResult   procedure(SQLHSTMT hStmt, *queue q),sqlReturn
 
-executeStatement procedure(SQLHSTMT hStmt, *IDynStr sqlCode),sqlReturn,virtual,protected
+executeDirect    procedure(SQLHSTMT hStmt, *IDynStr sqlCode),sqlReturn,virtual,protected
 
 ! ------------------------------------------------------------------------------
 ! fetch with out a result set.  
@@ -86,6 +86,8 @@ fetch            procedure(SQLHSTMT hStmt, *queue q, columnsClass cols),sqlRetur
 ! -----------------------------------------------------------------------------
 fillResult       procedure(SQLHSTMT hStmt, *columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 
+
+ProcessRead      procedure(*queue q, *columnsClass cols),virtual,protected
 ! -----------------------------------------------------------------------------
 ! call the error class to read the error information
 ! -----------------------------------------------------------------------------
