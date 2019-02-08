@@ -15,11 +15,19 @@ _ODBCColumssPresent_   EQUATE(1)
 ! SQL_NULL_DATA.
 ! the value of 100 is just a number, most queries will contain less than 100 columns
 ! if a larger number is needed adjust, but don't get stupid.  this waste space
-! with 100 most of the time  but doing this with dynamic arrays in Clarion is 
-! difficult at best, possiable to do but the code is complex and probably 
-! fragile. So I decedied to cheat and use a static array and waste a small amount of space.  
+! with 100 most of the time   clarion does not support dynamic arrays
+! So we are going t o cheat and use a static array and waste a small amount of space.  
 ! -------------------------------------------------------------------------
 numberCols  equate(100)
+
+ColumnsLarge queue,type
+binaryHolder   &string          ! if this is a varbinary column this will hold the data that was read 
+charHolder     &cstring       ! if this is a varchar column this will hold the data that was read
+ColSize        long           ! size of the data that was read
+ColId          long
+ColType        SQLSMALLINT    ! type of the col, odbc const this will always be one of the two 
+                              ! SQL_LONGVARBINARY or SQL_LONGVARCHAR
+             end  
 
 ! -----------------------------------------------------------  
 ! queue to store the columns used in a query
@@ -30,10 +38,9 @@ ColType        SQLSMALLINT    ! type of the col, odbc const
 ColBuffer      SQLPOINTER     ! pointer to the buffer for the result
 ColSize        SQLLEN         ! size of the column in bytes
 colLenStrPtr   long
-allowNulls     bool           ! true indicates this column allws nulls in the back end
-ActualQuePos   long           ! more for the UI than the column, sets the actual position in the queue
-                              ! if not the same as the sequence the column was added
-                              ! list box format string is the driver
+allowNulls     bool           ! true indicates this column allows nulls in the back end
+ActualQuePos   long           ! 
+binaryHolder   &blob
              end 
 
 ! --------------------------------------------------------------------- 
@@ -47,8 +54,9 @@ columnsClass class,type,module('odbcColumnsCl.clw'),link('odbcColumnsCl.clw',_AB
 ! ---------------------------------------------------------------------------
 ! queue of the columns that will be used by the database call
 ! ---------------------------------------------------------------------------
-colQ           &ColumnsQueue,private
+colQ           &ColumnsQueue
 
+colB           &ColumnsLarge
 ! ---------------------------------------------------------------------------
 ! array of long for use by the bind column call
 ! this is used for the nullvalues on the back end
@@ -146,6 +154,9 @@ AddColumn procedure(*long colPtr, bool allowNulls = false, long actualQueuePos =
 AddColumn procedure(*string colPtr, bool allowNulls = false, long actualQueuePos = -1)
 AddColumn procedure(*cstring colPtr, bool allowNulls = false, long actualQueuePos = -1)
 !
+AddLargeColumn procedure(*cstring colPtr, bool allowNulls = true)
+AddLargeColumn procedure(*string colPtr, bool allowNulls = true)
+
 ! --------------------------------------------------
 ! the floating point  types 
 ! --------------------------------------------------

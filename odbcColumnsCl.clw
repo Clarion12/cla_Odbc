@@ -46,6 +46,11 @@ retv      byte(level:benign)
     return level:notify
   end 
     
+  self.colB &= new(ColumnsLarge)
+  if (self.colb &= null)
+    return level:notify
+  end 
+
   return retv
 ! end init 
 ! ------------------------------------------------------------------------------
@@ -55,14 +60,17 @@ retv      byte(level:benign)
 ! ------------------------------------------------------------------------------
 columnsClass.kill procedure()
 
+x  long,auto
+
   code 
 
-  if (~self.colQ &= null)
-    free(self.colQ)
-    dispose(self.colQ)
-    self.colQ &= null
-  end    
-    
+  self.clearQ()
+
+  dispose(self.colQ)
+  self.colQ &= null
+  dispose(self.colB)
+  self.colb &= null
+  
   return
 ! end kill
 ! ------------------------------------------------------------------------------
@@ -85,11 +93,17 @@ columnsClass.destruct procedure() ! virtual
 ! ------------------------------------------------------------------------------
 columnsClass.clearQ procedure()
 
+x    long,auto
+
   code 
   
+  clear(self.colQ)
   free(self.colQ)
   self.allowNulls = false
-    
+
+  clear(self.colb)
+  free(self.colb)
+
   return
 ! end clearQ
 ! ------------------------------------------------------------------------------
@@ -122,11 +136,6 @@ x         long,auto
     end  
   end
   
-  ! don't care about info messages here
-  if (retv = Sql_Success_With_Info)
-    retv = Sql_Success
-  end
-    
   return retv 
 ! end bindColumns
 ! ------------------------------------------------------------------------------
@@ -183,6 +192,39 @@ columnsClass.AddColumn procedure(*cstring colPtr, bool allowNulls = false, long 
    
   return
 ! end AddColumn
+! ------------------------------------------------------------------------------
+
+columnsClass.AddLargeColumn procedure(*cstring colPtr, bool allowNulls = true)
+
+  code 
+
+  ! order is the order the columns are added
+  self.colB.ColId = records(self.colq) + 1
+  self.colB.ColType = SQL_LONGVARCHAR
+  add(self.colb)
+  if (allowNulls = true) 
+    self.allowNulls = true
+  end 
+   
+  return
+! end AddLargeColumn
+! ------------------------------------------------------------------------------
+
+columnsClass.AddLargeColumn procedure(*string colPtr, bool allowNulls = true) 
+ 
+   code 
+  
+  self.colb.ColId = records(self.colq) + 2
+  self.colb.ColType = SQL_LONGVARBINARY
+  self.colb.binaryHolder &= colPtr
+  if (allowNulls = true) 
+    self.allowNulls = true
+  end 
+
+  add(self.colb)
+
+   return
+! end AddLargeColumn
 ! ------------------------------------------------------------------------------
 
 columnsClass.AddColumn procedure(*real colPtr, bool allowNulls = false, long actualQueuePos = -1)
