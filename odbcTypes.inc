@@ -109,7 +109,6 @@ SQL_TIME         equate(10)
 SQL_TYPE_TIMESTAMP equate(93)
 
 SQL_SIGNED_OFFSET equate(-20)
-SQL_NO_TOTAL      equate(-4)
 
 SQL_C_SHORT      equate(5)
 SQL_C_SLONG      equate(SQL_INTEGER + SQL_SIGNED_OFFSET)
@@ -117,10 +116,17 @@ SQL_C_FLOAT      equate(7)
 SQL_C_DOUBLE     equate(8)
 SQL_C_TYPE_TIMESTAMP equate(11)
 
+SQL_LONGVARBINARY equate(-4)
+SQL_LONGVARCHAR   equate(-1)
+SQL_C_BINARY      equate(-2)
+
+SQL_VARCHAR      equate(12)
+
 SQL_C_DECIMAL    equate(2)
 SQL_C_NUMERIC    equate(3)
 
 SQL_NULL_DATA    equate(-1)
+SQL_NO_TOTAL     equate(-4)  ! see MSDN for this one, 
 
 SQL_C_DATE       equate(9)
 SQL_C_TIME       equate(10)
@@ -159,6 +165,17 @@ SQL_IS_POINTER  equate(-4)
 SQL_ATTR_AUTOCOMMIT  equate(102)
 SQL_AUTOCOMMIT_ON    equate(1)
 SQL_AUTOCOMMIT_OFF   equate(0)
+
+SQL_COMMIT           equate(0)
+SQL_ROLLBACK         equate(1)
+
+SQL_ATTR_TXN_ISOLATION equate(108)
+
+! isolation levels, these are bit masks for get info if called/needed
+SQL_TRANSACTION_READ_UNCOMMITTED    equate(1)
+SQL_TRANSACTION_READ_COMMITTED      equate(2)
+SQL_TRANSACTION_REPEATABLE_READ     equate(4)
+SQL_TRANSACTION_SERIALIZABLE        equate(8)
 
 SQL_ATTR_ASYNC_ENABLE        equate(4)
 SQL_ASYNC_ENABLE_ON          equate(1)

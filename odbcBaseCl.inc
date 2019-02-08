@@ -42,6 +42,35 @@ errs                   &ODBCErrorClType,private
 ! ----------------------------------------------------------------------
 unBindColums     procedure(SQLHSTMT hStmt)  
 
+! ----------------------------------------------------------------------
+! setss the isolation level for the hDbc input.  the connection must not 
+! have any open transaction when this is called.  the connection can be opend 
+! or closed. 
+! ----------------------------------------------------------------------
+setIsolationLevel procedure(SQLHDBC hDbc, long level),sqlReturn
+
+! ----------------------------------------------------------------------
+! begins a transaction for the connection handle input.  
+! this actually turns off auto-commit mode.
+! ----------------------------------------------------------------------
+beginTransaction procedure(SQLHDBC hDbc),sqlReturn
+
+! ----------------------------------------------------------------------
+! commits a transaction for the connection handle input.  
+! ----------------------------------------------------------------------
+CommitTransaction procedure(SQLHDBC hDbc),sqlReturn
+
+! ----------------------------------------------------------------------
+! rolls back a transaction for the connection handle input.  
+! ----------------------------------------------------------------------
+RollbackTransaction procedure(SQLHDBC hDbc),sqlReturn
+
+! ----------------------------------------------------------------------
+! ends a transaction for the connection handle input.  
+! called fromthe commit or rollback functions.
+! ----------------------------------------------------------------------
+EndTransaction procedure(SQLHDBC hDbc, long committRollBack),sqlReturn,private
+
 formatRow        procedure(),virtual  
 
 ! -----------------------------------------------------------------------------
@@ -86,12 +115,43 @@ fetch            procedure(SQLHSTMT hStmt, *queue q, columnsClass cols),sqlRetur
 ! -----------------------------------------------------------------------------
 fillResult       procedure(SQLHSTMT hStmt, *columnsClass cols, *queue q, long setId = 1),sqlReturn,protected
 
+! -----------------------------------------------------------------------------
+! process any large character or binay objects in the query
+! -----------------------------------------------------------------------------
+processLargeObjects procedure(SQLHSTMT hStmt, *columnsClass cols)
+
+! -----------------------------------------------------------------------------
+! reads the large character objects 
+! -----------------------------------------------------------------------------
+readLargeChar       procedure(SQLHSTMT hStmt, *columnsClass cols) 
+
+! -----------------------------------------------------------------------------
+! reads the number of bytes for the large character objects 
+! -----------------------------------------------------------------------------
+getCharLength       procedure(SQLHSTMT hStmt, *columnsClass cols),long,private 
+
+! -----------------------------------------------------------------------------
+! reads the large binary objects 
+! -----------------------------------------------------------------------------
+readLargeBinary     procedure(SQLHSTMT hStmt, *columnsClass cols) 
+
+! -----------------------------------------------------------------------------
+! reads the number of bytes for the large binary objects 
+! -----------------------------------------------------------------------------
+getBinaryLength     procedure(SQLHSTMT hStmt, *columnsClass cols),long,private 
+
 
 ProcessRead      procedure(*queue q, *columnsClass cols),virtual,protected
+
 ! -----------------------------------------------------------------------------
 ! call the error class to read the error information
 ! -----------------------------------------------------------------------------
 getError         procedure(SQLHSTMT hStmt),protected
+
+! -----------------------------------------------------------------------------
+! call the error class to read the error information
+! -----------------------------------------------------------------------------
+getConnectionError procedure(SQLHDBC hDbc),protected
 
             end
 
