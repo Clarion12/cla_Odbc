@@ -21,9 +21,9 @@ _ODBCColumssPresent_   EQUATE(1)
 numberCols  equate(100)
 
 ColumnsLarge queue,type
-binaryHolder   &string          ! if this is a varbinary column this will hold the data that was read 
+binaryHolder   &string       ! if this is a varbinary column this will hold the data that was read 
 charHolder     &cstring       ! if this is a varchar column this will hold the data that was read
-ColSize        long           ! size of the data that was read
+ColSize        long          ! size of the data that was read
 ColId          long
 ColType        SQLSMALLINT    ! type of the col, odbc const this will always be one of the two 
                               ! SQL_LONGVARBINARY or SQL_LONGVARCHAR
@@ -40,7 +40,6 @@ ColSize        SQLLEN         ! size of the column in bytes
 colLenStrPtr   long
 allowNulls     bool           ! true indicates this column allows nulls in the back end
 ActualQuePos   long           ! 
-binaryHolder   &blob
              end 
 
 ! --------------------------------------------------------------------- 
@@ -154,8 +153,7 @@ AddColumn procedure(*long colPtr, bool allowNulls = false, long actualQueuePos =
 AddColumn procedure(*string colPtr, bool allowNulls = false, long actualQueuePos = -1)
 AddColumn procedure(*cstring colPtr, bool allowNulls = false, long actualQueuePos = -1)
 !
-AddLargeColumn procedure(*cstring colPtr, bool allowNulls = true)
-AddLargeColumn procedure(*string colPtr, bool allowNulls = true)
+AddLargeColumn procedure(SQLSMALLINT colType, long colId, bool allowNulls = true),byte
 
 ! --------------------------------------------------
 ! the floating point  types 

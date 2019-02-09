@@ -194,36 +194,27 @@ columnsClass.AddColumn procedure(*cstring colPtr, bool allowNulls = false, long 
 ! end AddColumn
 ! ------------------------------------------------------------------------------
 
-columnsClass.AddLargeColumn procedure(*cstring colPtr, bool allowNulls = true)
+columnsClass.AddLargeColumn procedure(SQLSMALLINT  colType, long colId, bool allowNulls = true)
 
   code 
-
-  ! order is the order the columns are added
-  self.colB.ColId = records(self.colq) + 1
-  self.colB.ColType = SQL_LONGVARCHAR
-  add(self.colb)
-  if (allowNulls = true) 
-    self.allowNulls = true
-  end 
-   
-  return
-! end AddLargeColumn
-! ------------------------------------------------------------------------------
-
-columnsClass.AddLargeColumn procedure(*string colPtr, bool allowNulls = true) 
- 
-   code 
   
-  self.colb.ColId = records(self.colq) + 2
-  self.colb.ColType = SQL_LONGVARBINARY
-  self.colb.binaryHolder &= colPtr
+  if (coltype <> SQL_LONGVARCHAR) and (coltype <> SQL_LONGVARBINARY)
+    return level:notify
+  end  
+
+  if (colId <= records(self.colQ))
+    return level:notify
+  end 
+    
+  self.colb.ColId = colId  
+  self.colb.ColType = colType
   if (allowNulls = true) 
     self.allowNulls = true
   end 
 
   add(self.colb)
 
-   return
+   return level:benign
 ! end AddLargeColumn
 ! ------------------------------------------------------------------------------
 
