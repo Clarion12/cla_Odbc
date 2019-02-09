@@ -43,34 +43,6 @@ errs                   &ODBCErrorClType,private
 unBindColums     procedure(SQLHSTMT hStmt)  
 
 ! ----------------------------------------------------------------------
-! setss the isolation level for the hDbc input.  the connection must not 
-! have any open transaction when this is called.  the connection can be opend 
-! or closed. 
-! ----------------------------------------------------------------------
-setIsolationLevel procedure(SQLHDBC hDbc, long level),sqlReturn
-
-! ----------------------------------------------------------------------
-! begins a transaction for the connection handle input.  
-! this actually turns off auto-commit mode.
-! ----------------------------------------------------------------------
-beginTransaction procedure(SQLHDBC hDbc),sqlReturn
-
-! ----------------------------------------------------------------------
-! commits a transaction for the connection handle input.  
-! ----------------------------------------------------------------------
-CommitTransaction procedure(SQLHDBC hDbc),sqlReturn
-
-! ----------------------------------------------------------------------
-! rolls back a transaction for the connection handle input.  
-! ----------------------------------------------------------------------
-RollbackTransaction procedure(SQLHDBC hDbc),sqlReturn
-
-! ----------------------------------------------------------------------
-! ends a transaction for the connection handle input.  
-! called fromthe commit or rollback functions.
-! ----------------------------------------------------------------------
-EndTransaction procedure(SQLHDBC hDbc, long committRollBack),sqlReturn,private
-
 formatRow        procedure(),virtual  
 
 ! -----------------------------------------------------------------------------
@@ -107,6 +79,14 @@ fetch            procedure(SQLHSTMT hStmt),sqlReturn,virtual
 ! ------------------------------------------------------------------------------
 fetch            procedure(SQLHSTMT hStmt, *queue q),sqlReturn,protected,virtual
 
+! ------------------------------------------------------------------------------
+! fetch
+! reads the result set, one row at a time and places the data into the queue fields.
+! Queue fields are already bound to the columns so all that is needed here is an add(q)
+! this over load will also handle the unbound large columns, if there are any
+!
+! Note, the queue fields must be bound before this method is called.
+! ------------------------------------------------------------------------------
 fetch            procedure(SQLHSTMT hStmt, *queue q, columnsClass cols),sqlReturn,protected,virtual
 
 ! -----------------------------------------------------------------------------
@@ -118,12 +98,12 @@ fillResult       procedure(SQLHSTMT hStmt, *columnsClass cols, *queue q, long se
 ! -----------------------------------------------------------------------------
 ! process any large character or binay objects in the query
 ! -----------------------------------------------------------------------------
-processLargeObjects procedure(SQLHSTMT hStmt, *columnsClass cols)
+processLargeObjects procedure(SQLHSTMT hStmt, *columnsClass cols),protected
 
 ! -----------------------------------------------------------------------------
 ! reads the large character objects 
 ! -----------------------------------------------------------------------------
-readLargeChar       procedure(SQLHSTMT hStmt, *columnsClass cols) 
+readLargeChar       procedure(SQLHSTMT hStmt, *columnsClass cols),protected 
 
 ! -----------------------------------------------------------------------------
 ! reads the number of bytes for the large character objects 
@@ -133,14 +113,20 @@ getCharLength       procedure(SQLHSTMT hStmt, *columnsClass cols),long,private
 ! -----------------------------------------------------------------------------
 ! reads the large binary objects 
 ! -----------------------------------------------------------------------------
-readLargeBinary     procedure(SQLHSTMT hStmt, *columnsClass cols) 
+readLargeBinary     procedure(SQLHSTMT hStmt, *columnsClass cols),protected 
 
 ! -----------------------------------------------------------------------------
 ! reads the number of bytes for the large binary objects 
 ! -----------------------------------------------------------------------------
 getBinaryLength     procedure(SQLHSTMT hStmt, *columnsClass cols),long,private 
 
-
+! -----------------------------------------------------------------------------
+! reads the large objects from the result set, if there are any, often there 
+! will not be any large vzrchar(x) or varbinary(x) columns in the reads
+! but o the occasion they are present deal with them here 
+! and in the calling function, the values assigned here must be pushed back to the 
+! using queue.
+! -----------------------------------------------------------------------------
 ProcessRead      procedure(*queue q, *columnsClass cols),virtual,protected
 
 ! -----------------------------------------------------------------------------

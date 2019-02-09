@@ -98,101 +98,6 @@ h  long
 ! ----------------------------------------------------------------------
 
 ! ----------------------------------------------------------------------
-! sets the isolation level for the hDbc input.  the connection must not 
-! have any open transaction when this is called.  the connection can be opend 
-! or closed. 
-! ----------------------------------------------------------------------
-odbcBaseClType.setIsolationLevel procedure(SQLHDBC hDbc, long level) !,sqlReturn
-
-retv  sqlReturn,auto
-
-  code
-
-  retv = SQLSetConnectAttr(hDbc, SQL_ATTR_TXN_ISOLATION, level, SQL_IS_INTEGER) 
-  if (retv <> SQL_SUCCESS)
-    self.getConnectionError(hDbc)
-  end
-
-  return retv
-! end  setIsolationLevel
-! ----------------------------------------------------------------------
-
-! ----------------------------------------------------------------------
-! begins a transaction for the connection handle input.  
-! this actually turns off auto-commit mode.
-! ----------------------------------------------------------------------
-odbcBaseClType.beginTransaction procedure(SQLHDBC hDbc)
-
-autoOff   long(SQL_AUTOCOMMIT_OFF)
-retv      sqlReturn,auto
-
-  code
-
-  retv = SQLSetConnectAttr(hDbc, SQL_ATTR_AUTOCOMMIT, autoOff, SQL_IS_INTEGER)  
-  if (retv <> SQL_SUCCESS) 
-    self.getConnectionError(hDbc)
-  end 
-
-  return retv
-! end beginTransaction
-! -----------------------------------------------------------------------
-
-! ----------------------------------------------------------------------
-! commits a transaction for the connection handle input.  
-! ----------------------------------------------------------------------
-odbcbaseClType.CommitTransaction procedure(SQLHDBC hDbc)
-
-retv      sqlReturn,auto
-
-  code
-
-  retv = self.EndTransaction(hDbc, SQL_COMMIT)
-  if (retv <> SQL_SUCCESS) 
-    self.getConnectionError(hDbc)
-  end 
-
-  return retv
-! end CommitTransaction 
-! ----------------------------------------------------------------------  
-
-! ----------------------------------------------------------------------
-! rolls back a transaction for the connection handle input.  
-! ----------------------------------------------------------------------
-odbcbaseClType.RollbackTransaction procedure(SQLHDBC hDbc)
-
-retv      sqlReturn,auto
-
-  code
-
-  retv = self.EndTransaction(hDbc, SQL_ROLLBACK)
-  if (retv <> SQL_SUCCESS) 
-    self.getConnectionError(hDbc)
-  end 
-
-  return retv
-! end RollbackTransaction 
-! ----------------------------------------------------------------------  
-
-! ----------------------------------------------------------------------
-! ends a transaction for the connection handle input.  
-! called fromthe commit or rollback functions.
-! ----------------------------------------------------------------------
-odbcbaseClType.EndTransaction procedure(SQLHDBC hDbc, long committRollBack) !sqlReturn,private
-
-retv      sqlReturn,auto
-
-  code
-
-  retv = SQLEndTran(SQL_HANDLE_DBC, hDbc, committRollback)
-  if (retv <> SQL_SUCCESS) 
-    self.getConnectionError(hDbc)
-  end 
-
-  return retv
-! end EndTransaction 
-! ----------------------------------------------------------------------  
-
-! ----------------------------------------------------------------------
 ! virtual place holder
 ! use this function to format the fields or columns read prior to the display
 ! ----------------------------------------------------------------------
@@ -360,37 +265,51 @@ retv   sqlReturn,auto
 ! end fetch
 ! -----------------------------------------------------------------------------
 
+! ------------------------------------------------------------------------------
+! fetch
+! reads the result set, one row at a time and places the data into the queue fields.
+! Queue fields are already bound to the columns so all that is needed here is an add(q)
+! this over load will also handle the unbound large columns, if there are any
+!
+! Note, the queue fields must be bound before this method is called.
+! ------------------------------------------------------------------------------
 odbcBaseClType.fetch procedure(SQLHSTMT hStmt, *queue q, *columnsClass cols) !sqlReturn,virtual
 
 retv   sqlReturn,auto
-allowNulls   bool,auto
 
   code 
   
-  loop
-    clear(q)
-    retv = SQLFetch(hStmt)
-    case retv 
-    of SQL_NO_DATA
-      ! set back to success, no_data is expected (end of result set), 
-      ! but caller is going to check for success
-      retv = Sql_Success    
-      break
-    of Sql_Success
-      self.processLargeObjects(hStmt, cols)  
-      self.ProcessRead(q, cols)
-    of Sql_Success_with_info
-      self.getError(hStmt)  
-      self.processLargeObjects(hStmt, cols)  
-      self.ProcessRead(q, cols)
-    else 
-      ! dump the queue, something went wrong and 
-      ! the code should not return a partial result set
-      free(q)
-      self.getError(hStmt)
-      break    
-    end  ! case
-  end ! loop
+  ! if the queue is empty then there are no large columns in the read
+  ! this fetch function  does a little less work because it does not call 
+  ! the processLargeOpbjects function
+  if (records(cols.colb) <= 0) 
+    retv = self.fetch(hStmt, q)
+  else 
+    loop
+      clear(q)
+      retv = SQLFetch(hStmt)
+      case retv 
+      of SQL_NO_DATA
+        ! set back to success, no_data is expected (end of result set), 
+        ! but caller is going to check for success
+        retv = Sql_Success    
+        break
+      of Sql_Success
+        self.processLargeObjects(hStmt, cols)  
+        self.ProcessRead(q, cols)
+      of Sql_Success_with_info
+        self.getError(hStmt)  
+        self.processLargeObjects(hStmt, cols)  
+        self.ProcessRead(q, cols)
+      else 
+        ! dump the queue, something went wrong and 
+        ! the code should not return a partial result set
+        free(q)
+        self.getError(hStmt)
+        break    
+      end  ! case
+    end ! loop
+  end ! if records
   
   return retv
 ! end fetch
@@ -421,14 +340,17 @@ retv   sqlReturn,auto
       self.getError(hStmt)
   end  
 
-  if (retv = SQL_SUCCESS) or (retv = SQL_SUCCESS_WITH_INFO)
-    !self.processLargeObjects(hStmt, cols)  
-  end
-
   return retv
 ! end fillResult
 ! -----------------------------------------------------------------------------
 
+! -----------------------------------------------------------------------------
+! reads the large objects from the result set, if there are any, often there 
+! will not be any large vzrchar(x) or varbinary(x) columns in the reads
+! but o the occasion they are present deal with them here 
+! and in the calling function, the values assigned here must be pushed back to the 
+! using queue.
+! -----------------------------------------------------------------------------
 odbcBaseClType.processLargeObjects procedure(SQLHSTMT hStmt, *columnsClass cols) 
 
 x  long,auto
@@ -450,31 +372,33 @@ x  long,auto
 ! -------------------------------------------------------------------------
 
 ! -------------------------------------------------------------------------
-! reads a larger character column. 
+! reads a large character column. 
 ! typically this will be varchar(n) where n is a a number larger than the normal 
-! character column size.  will almost always be used for varchar(max)
-!
+! character column size.  
 ! -------------------------------------------------------------------------
 odbcBaseClType.readLargeChar procedure(SQLHSTMT hStmt, *columnsClass cols) 
 
-retv     long,auto
-res      sqlReturn,auto
-sizeData long,auto
+retv     sqlReturn,auto
 colLen   SQLLEN(0)
 
   code
 
   cols.colb.colSize = self.getCharLength(hStmt, cols)
  
-  ! if greater than zero then some data is in the buffer, it may be 1 byte of x bytes
+  ! if greater than zero then some data is in the buffer, it may be 1 byte or it may be many bytes
   ! allocate the storage and read it 
   if (cols.colb.colSize > 0) 
-    cols.colb.charHolder &= new(cstring(cols.colb.colSize + 1))
-
-    res = SQLGetData(hStmt, cols.colB.colId, SQL_C_CHAR, cols.colb.charHolder, cols.colb.colSize,  colLen)
-    if (res = SQL_SUCCESS) or (res = SQL_SUCCESS_WITH_INFO)
-      put(cols.colb)
-    end   
+    cols.colb.charHolder  &= new(cstring(cols.colb.colSize + 1))
+    retv = SQLGetData(hStmt, cols.colB.colId, SQL_C_CHAR, cols.colb.charHolder, cols.colb.colSize + 1,  colLen)
+    case retv 
+      of SQL_SUCCESS
+        put(cols.colb)
+      of SQL_SUCCESS_WITH_INFO
+        self.getError(hStmt)
+        put(cols.colb)
+      else 
+        self.getError(hStmt)
+    end
   end 
 
   return
@@ -489,49 +413,51 @@ colLen   SQLLEN(0)
 ! -------------------------------------------------------------------------
 odbcBaseClType.getCharLength procedure(SQLHSTMT hStmt, *columnsClass cols)
 
-retv   long,auto
-res    sqlReturn,auto
-outStr &cstring
-colLen SQLLEN
+retv   sqlReturn,auto
+outStr &cstring     ! used t oread the size
+colLen SQLLEN,auto  ! output parameter that contains the size needed for the buffer
 
   code 
 
   ! get the number of bytes for the column.  the outStr parameter is 
   ! null so the call just sends back the size of the string
   ! note the out value of colLen can be the length, SQL_NULL_DATA or SQL_NO_TOTAL
-  res = SQLGetData(hStmt, cols.colb.colId, SQL_C_CHAR, outStr, 0,  colLen)
-  if (res <> SQL_SUCCESS) and (res <> SQL_SUCCESS_WITH_INFO)
-    retv = -1 
+  retv = SQLGetData(hStmt, cols.colb.colId, SQL_C_CHAR, outStr, 0,  colLen)
+  if (retv <> SQL_SUCCESS) 
     self.getError(hStmt)
-  else 
-    ! this can SQL_NULL_DATA if the column is null
-    retv = colLen  
   end  
 
   return colLen
 ! getCharLength
 ! -------------------------------------------------------------------------
 
+! -------------------------------------------------------------------------
+! reads a large binary column from the result set.  this will be a binary(x) 
+! or a varbinary(x) on the back end.
+! -------------------------------------------------------------------------
 odbcBaseClType.ReadLargeBinary procedure(SQLHSTMT hStmt, *columnsClass cols)
 
-retv     long,auto
-res      sqlReturn,auto
-sizeData long,auto
+retv     sqlReturn,auto
 colLen   SQLLEN(0)
 
   code
 
   cols.colb.colSize = self.getBinaryLength(hStmt, cols)
  
-  ! if greater than zero then some data is in the buffer, it will 1 t on bytes
+  ! if greater than zero then some data is in the buffer, it will 1 to n bytes
   ! allocate the storage and read it 
   if (cols.colb.colSize > 0) 
-    ! clear it before the read
     cols.colb.binaryHolder &= new(string(cols.colb.colSize))
-    res  = SQLGetDataBin(hStmt, cols.colB.colId, SQL_C_BINARY, address(cols.colb.binaryHolder), cols.colb.colSize,  colLen)
-    if (res = SQL_SUCCESS) or (res = SQL_SUCCESS_WITH_INFO)
-      put(cols.colb)
-    end   
+    retv  = SQLGetDataBin(hStmt, cols.colB.colId, SQL_C_BINARY, address(cols.colb.binaryHolder), cols.colb.colSize,  colLen)
+    case retv 
+      of SQL_SUCCESS
+        put(cols.colb)
+      of SQL_SUCCESS_WITH_INFO
+        self.getError(hStmt)
+        put(cols.colb)
+      else 
+        self.getError(hStmt)
+    end
   end 
 
   return
@@ -546,23 +472,18 @@ colLen   SQLLEN(0)
 ! -------------------------------------------------------------------------
 odbcBaseClType.getBinaryLength procedure(SQLHSTMT hStmt, *columnsClass cols)
 
-retv   long,auto
-res    sqlReturn,auto
+retv   sqlReturn,auto
 outByte &byte
-colLen SQLLEN
+colLen SQLLEN,auto  ! output parameter that contains the size needed for the buffer
 
   code 
   
   ! get the number of bytes for the column.  the outByte parameter is 
   ! null so the call just sends back the size of the array
   ! note the out value of colLen can be the length, SQL_NULL_DATA or SQL_NO_TOTAL
-  res = SQLGetDataBin(hStmt, cols.colb.colId, SQL_C_BINARY, address(outByte), 0,  colLen)
-  if (res <> SQL_SUCCESS) and (res <> SQL_SUCCESS_WITH_INFO)
-    retv = -1 
+  retv = SQLGetDataBin(hStmt, cols.colb.colId, SQL_C_BINARY, address(outByte), 0,  colLen)
+  if (retv <> SQL_SUCCESS) 
     self.getError(hStmt)
-  else 
-    ! this can SQL_NULL_DATA if the column is null
-    retv = colLen  
   end  
 
   return colLen
