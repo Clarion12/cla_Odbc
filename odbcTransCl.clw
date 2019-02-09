@@ -14,13 +14,15 @@
 ! Init 
 ! sets up the instance for use.  
 ! ---------------------------------------------------------------------------  
-odbcTransactionClType.init procedure(SQLHDBC handle)   
+odbcTransactionClType.init procedure(SQLHDBC hDbc)   
 
 retv     byte(level:benign)
 
   code 
   
-  self.hDbc = handle
+  self.hDbc = hDbc
+  ! set the default isolation level, typically it is best to 
+  ! leave as read committed but it can be set to what ever is needed
   self.defaultIsolationLvl = SQL_TRANSACTION_READ_COMMITTED
 
   return retv 
@@ -151,6 +153,10 @@ retv sqlReturn,auto
 ! ----------------------------------------------------------------------
 ! begins a transaction for the connection handle input.  
 ! this actually turns off auto-commit mode.
+! 
+! note, if this is called then you must call the commit or roll back functions
+! when the work is completd.  failing to end a transaction will cause 
+! bad things to happen
 ! ----------------------------------------------------------------------
 odbcTransactionClType.beginTrans procedure()
 
@@ -197,7 +203,7 @@ retv      sqlReturn,auto
 
 ! ----------------------------------------------------------------------
 ! ends a transaction for the connection handle input.  
-! called fromthe commit or rollback functions.
+! called from the commit or rollback functions.
 ! ----------------------------------------------------------------------
 odbcTransactionClType.EndTrans procedure(long committRollBack) !sqlReturn,private
 
@@ -208,6 +214,8 @@ retv      sqlReturn,auto
   retv = SQLEndTran(SQL_HANDLE_DBC, self.hDbc, committRollback)
   ! if it was ended then reset to the default
   if (retv = SQL_SUCCESS) or (retv = SQL_SUCCESS_WITH_INFO) 
+    ! if the current value is not the default set it back to the default
+    ! if it is the default then there is nothing to do
     if (self.currentIsolationLvl <> self.defaultIsolationLvl)
       retv = SQLSetConnectAttr(self.hDbc, SQL_ATTR_TXN_ISOLATION, self.defaultIsolationLvl, SQL_IS_INTEGER)
       self.currentIsolationLvl = self.defaultIsolationLvl

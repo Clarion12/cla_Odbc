@@ -5,6 +5,16 @@ _ODBCTransClassPresent_   EQUATE(1)
 
   include('odbcTypes.inc'),once
 
+! -------------------------------------------------------------------------------
+! object to handle the transaction needs for the various calls.
+! the code will begin a transaction, commit or roll back a transaction
+! and the various isolation levels can be set for selected transactions.
+! 
+! the object, by default, uses the read committed isolation level.  the other 
+! levels can be used if needed/wanted.  if a level other than the default is used 
+! the code will set the isoaltion level back to the default when the transaction
+! end, with either a commit or a roll back.
+! -------------------------------------------------------------------------------
 odbcTransactionClType class,type,module('odbcTransCl.clw'),link('odbcTransCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 
 ! ------------------------------------------------------
@@ -20,15 +30,18 @@ hDbc     SQLHDBC,private
 currentIsolationLvl SQLINTEGER
 
 ! ------------------------------------------------------------------
-! the default isolation leve that will be used by the transactions
+! the default isolation level that will be used by the transactions
 ! set this to what ever is needed/wnated 
-! but unless there is very specific reasons to change the default of 
-! read committed should be used.
+!
+! Note, unless there are very specific reasons to change the default, 
+! and you understand the implications of the different isolation levels
+! the default value of read committed, set in the constructor and 
+! is the default level used by Sql Server, should be used.
 ! ------------------------------------------------------------------
 defaultIsolationLvl SQLINTEGER,private 
 
 ! set up and tear down
-init             procedure(SQLHDBC hanlde),byte,proc
+init             procedure(SQLHDBC hDbc),byte,proc
 kill             procedure(),virtual
 destruct         procedure(),virtual
 
@@ -64,6 +77,10 @@ setIsolationRepeatabelread procedure(),sqlReturn
 ! ----------------------------------------------------------------------
 ! begins a transaction for the connection handle input.  
 ! this actually turns off auto-commit mode.
+! 
+! note, if this is called then you must call the commit or roll back functions
+! when the work is completd.  failing to end a transaction will cause 
+! bad things to happen
 ! ----------------------------------------------------------------------
 beginTrans procedure(),sqlReturn
 
