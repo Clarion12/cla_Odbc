@@ -52,7 +52,13 @@ kill procedure()
 ! ---------------------------------------------------------------------------        
 destruct procedure(),virtual
 
+! ---------------------------------------------------------------------------
+! flag used for the table valued parameters.  the table or tables are  bound 
+! and then the columns are bound, bu the columns to not increase the parameter count.
+! this is set when a table is added and cleared when the queue is freed.
+! ---------------------------------------------------------------------------        
 AlreadyBound procedure(),bool
+
 ! ---------------------------------------------------------------------------------
 ! free the queue of parameters, this does not remove the bindings, if any
 ! ---------------------------------------------------------------------------------

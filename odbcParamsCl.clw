@@ -84,11 +84,15 @@ ParametersClass.destruct procedure()
 ! destruct 
 ! -----------------------------------------------------------------------------
 
+! -----------------------------------------------------------------------------
+! gets the status  ofr the flag for use in the stored procedure calls
+! -----------------------------------------------------------------------------
 ParametersClass.AlreadyBound procedure()
 
   code
 
   return self.alreadyBound
+! end AlreadyBound -----------------------------------------------------------
 
 ! ---------------------------------------------------------------------------------
 ! free the queue of parameters, this does not remove the bindings, if any
@@ -98,6 +102,7 @@ ParametersClass.clearQ procedure()
   code 
   
   free(self.paramQ)
+  ! done with this group so clear the flag
   self.alreadyBound = false
  
   return

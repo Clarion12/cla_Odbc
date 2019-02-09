@@ -99,7 +99,7 @@ retv    sqlReturn
   if (self.setupSpCall(spName, params) <> sql_Success)
     return sql_Error
   end 
-  
+  stop(self.sqlStr.sqlStr.cstr())
   retv = self.execSp(hStmt, self.sqlStr.sqlStr)
 
   return retv 
@@ -122,7 +122,11 @@ retv    sqlReturn
   end 
   
   if (~params &= null) 
-    retv = params.bindParameters(hStmt)
+    ! check the status, if a table or tables are used as paremter then 
+    ! don't bibd again, they have apready been boud to the hStmt
+    if (params.AlreadyBound() = false)
+      retv = params.bindParameters(hStmt)
+    end
   end
   
   if (retv = sql_Success) 
