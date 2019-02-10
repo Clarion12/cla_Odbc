@@ -9,7 +9,6 @@ _ODBCBaseClassPresent_   EQUATE(1)
   include('odbcSqlStrCl.inc'),once
   include('odbcColumnsCl.inc'),once 
 
-
 odbcBaseClType class,type,module('odbcBaseCl.clw'),link('odbcbaseCl.clw',_ABCLinkMode_),dll(_ABCDllMode_)
 
 ! -----------------------------------------------------------
